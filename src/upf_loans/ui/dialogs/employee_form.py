@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
-from ...core.validation import nic_warning
 from ...db.models import Employee
 from ...services import employees, renewals
 from ...services.errors import ServiceError
@@ -45,7 +44,7 @@ class EmployeeDialog(QDialog):
             box.addWidget(err)
             form.addRow(label, box)
 
-        for key, label, maxlen in (("pf_number", "PF number", 8), ("name", "Name", 50), ("nic", "NIC", 12),
+        for key, label, maxlen in (("pf_number", "PF number", 8), ("name", "Name", 50), ("nic", "NIC", 10),
                                    ("department", "Department", 100), ("designation", "Designation", 100)):
             edit = QLineEdit()
             edit.setMaxLength(maxlen)
@@ -53,7 +52,6 @@ class EmployeeDialog(QDialog):
             add(key, label, edit)
         self.fields["pf_number"].setPlaceholderText("e.g. R 001365")
         self.fields["nic"].setPlaceholderText("e.g. 680410054V")
-        self.fields["nic"].textChanged.connect(self._nic_hint)
         self.category = QComboBox()
         self.category.addItem("Non-academic", "N")
         self.category.addItem("Academic", "A")
@@ -61,8 +59,6 @@ class EmployeeDialog(QDialog):
         self.active = QCheckBox("Active employee")
         self.active.setChecked(True)
         form.addRow("", self.active)
-        self.nic_note = muted("")
-        form.addRow("", self.nic_note)
         tabs.addTab(details, "Details")
 
         if employee_id:
@@ -79,9 +75,6 @@ class EmployeeDialog(QDialog):
         buttons.accepted.connect(self._save)
         buttons.rejected.connect(self.reject)
         lay.addWidget(buttons)
-
-    def _nic_hint(self, text: str) -> None:
-        self.nic_note.setText(nic_warning(text.strip().upper()) or "")
 
     def _load(self) -> None:
         with self.ctx.db.session() as s:
