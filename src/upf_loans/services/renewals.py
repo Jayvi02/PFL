@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..core.eligibility import LoanInputs, LoanResult, calculate
+from ..core.money import format_money
 from ..core.ugc_text import UgcRow
 from ..db.models import Employee, RenewalBatch, RenewalEntry, User
 from . import audit, settings
@@ -135,7 +136,8 @@ def save_entry(
         action,
         "entry",
         entry.id,
-        f"{employee.pf_number} in {batch_label(batch)}: loan {result.loan_approved}, payable {result.balance_payable}",
+        f"{employee.pf_number} in {batch_label(batch)}: loan {format_money(result.loan_approved)}, "
+        f"payable {format_money(result.balance_payable)}",
         {"before": before, "inputs": {n: str(getattr(inputs, n)) for n in RenewalEntry.INPUT_FIELDS}},
     )
     return entry, result
