@@ -7,7 +7,8 @@ SRC = ROOT / "src"
 a = Analysis(
     [str(ROOT / "packaging" / "launch.py")],
     pathex=[str(SRC)],
-    datas=[(str(SRC / "upf_loans" / "db" / "migrations"), "upf_loans/db/migrations")],
+    datas=[(str(SRC / "upf_loans" / "db" / "migrations"), "upf_loans/db/migrations"),
+           (str(SRC / "upf_loans" / "assets"), "upf_loans/assets")],
     hiddenimports=["upf_loans.db.models", "sqlalchemy.dialects.sqlite", "alembic.runtime.migration",
                    "alembic.ddl.sqlite", "PySide6.QtSvg"],
     excludes=["tkinter", "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets", "PySide6.Qt3DCore",

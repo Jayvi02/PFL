@@ -7,6 +7,7 @@ They are written to a folder in the data directory and registered under the
 from __future__ import annotations
 
 from PySide6.QtCore import QDir
+from PySide6.QtGui import QFontDatabase
 
 from .. import config
 
@@ -29,3 +30,14 @@ def register() -> None:
         except OSError:
             pass
     QDir.addSearchPath("upf", str(folder))
+    register_fonts()
+
+
+def register_fonts() -> list[str]:
+    """Load the bundled Source Serif 4 files; returns the family names Qt found."""
+    families: set[str] = set()
+    for path in sorted((config.resource_dir() / "assets" / "fonts").glob("*.ttf")):
+        font_id = QFontDatabase.addApplicationFont(str(path))
+        if font_id >= 0:
+            families.update(QFontDatabase.applicationFontFamilies(font_id))
+    return sorted(families)

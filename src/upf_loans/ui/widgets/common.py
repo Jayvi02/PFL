@@ -67,7 +67,9 @@ class StatCard(Card):
         self.body.addWidget(self.value)
 
     def set_value(self, text: str) -> None:
-        self.value.setText(text)
+        from ..animation import count_to
+
+        count_to(self.value, text)
 
 
 class Banner(QFrame):
