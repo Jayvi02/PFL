@@ -18,7 +18,9 @@ uv pip install -p .venv -e ".[dev]"
 
 ## Build the Windows program
 
-Run `packaging\build_windows.bat`. It runs the tests, builds `dist\UPFLoanManager\UPFLoanManager.exe`, then runs the exe's `--self-test` check. Copy the whole `dist\UPFLoanManager` folder to the office PC. Nothing needs to be installed there.
+GitHub builds it automatically on every change to `main`. Download `UPFLoanManager-windows.zip` from the [latest release](https://github.com/Jayvi02/PFL/releases/tag/latest), unzip it, and run `UPFLoanManager.exe`.
+
+To build it yourself instead, run `packaging\build_windows.bat`. It runs the tests, builds `dist\UPFLoanManager\UPFLoanManager.exe`, then runs the exe's `--self-test` check. Copy the whole `dist\UPFLoanManager` folder to the office PC. Nothing needs to be installed there.
 
 Your data is kept in `%LOCALAPPDATA%\UPFLoans`, not in the program folder:
 
