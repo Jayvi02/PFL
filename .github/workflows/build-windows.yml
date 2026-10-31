@@ -1,0 +1,57 @@
+name: Build Windows app
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install Python and packages
+        run: |
+          uv venv -p 3.12 .venv
+          uv pip install -p .venv -e ".[dev]"
+
+      - name: Run tests
+        run: .venv\Scripts\python -m pytest -q
+
+      - name: Build exe
+        run: .venv\Scripts\pyinstaller --noconfirm --clean packaging\upf_loans.spec
+
+      - name: Self-test the built exe
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist\UPFLoanManager\UPFLoanManager.exe" -ArgumentList "--self-test" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "self-test failed with exit code $($p.ExitCode)" }
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path dist\UPFLoanManager -DestinationPath UPFLoanManager-windows.zip
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: UPFLoanManager-windows
+          path: UPFLoanManager-windows.zip
+
+      - name: Publish as the "latest" release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag 2>$null
+          gh release create latest UPFLoanManager-windows.zip --title "UPF Loan Manager (latest build)" --notes "Built from $env:GITHUB_SHA. Download UPFLoanManager-windows.zip, unzip it, and run UPFLoanManager.exe." --target $env:GITHUB_SHA
