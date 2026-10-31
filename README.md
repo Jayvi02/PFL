@@ -64,7 +64,7 @@ Every line is exactly 127 characters, using the field widths from the "new forma
 | Loan approved, existing balance, balance payable | 15 each | `000000000000.00` |
 | University code | 2 | right-aligned, e.g. ` F` |
 
-Lines end in Windows CRLF by default; you can change this in Settings. If any row doesn't fit, for example a 12-digit NIC, no file is written and the screen lists every row that needs fixing.
+Lines end in Windows CRLF by default; you can change this in Settings. NICs are always the 10-character format (9 digits followed by V or X); the app rejects any other format when you save an employee. If any row doesn't fit the file layout, no file is written and the screen lists every row that needs fixing.
 
 ## Project layout
 

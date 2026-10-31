@@ -25,6 +25,8 @@ def test_employee_validation_and_duplicates(db, admin):
             add_employee(s, admin, pf="R001365")
         with pytest.raises(ServiceError, match="NIC"):
             add_employee(s, admin, pf="R 000002", nic="12345")
+        with pytest.raises(ServiceError, match="10 characters"):
+            add_employee(s, admin, pf="R 000003", nic="197270000375")
         assert employees.search(s, "perera")[0].id == e.id
         assert employees.search(s, "680410054")[0].id == e.id
 
@@ -124,7 +126,8 @@ def test_exports(db, admin, tmp_path):
 
 def test_text_export_blocks_on_bad_nic(db, admin, tmp_path):
     with db.session() as s:
-        emp = add_employee(s, admin, nic="197270000375")
+        emp = add_employee(s, admin)
+        emp.nic = "197270000375"  # e.g. data from before the 10-character rule
         b = renewals.create_batch(s, admin, 11, 2024)
         renewals.save_entry(s, admin, b.id, emp.id, ROW7, 10, 2023)
         with pytest.raises(ServiceError, match="NIC"):
