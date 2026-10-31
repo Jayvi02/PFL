@@ -8,19 +8,18 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import QRegularExpression
 from PySide6.QtWidgets import (
-    QFrame, QGraphicsDropShadowEffect, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton,
-    QVBoxLayout, QWidget,
+    QFrame, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QVBoxLayout, QWidget,
 )
-from PySide6.QtGui import QColor
 
 from ...core.money import MoneyError, format_money, to_decimal
+from .. import theme
 from ..icons import icon
 
 
 def button(text: str, icon_name: str | None = None, variant: str | None = None, tooltip: str = "") -> QPushButton:
     btn = QPushButton(text)
     if icon_name:
-        color = "#FFFFFF" if variant == "primary" else ("#C53030" if variant == "danger" else "#1F3A68")
+        color = theme.ON_LIME if variant == "primary" else (theme.DANGER if variant == "danger" else theme.TEXT_SOFT)
         btn.setIcon(icon(icon_name, color))
     if variant:
         btn.setProperty("variant", variant)
@@ -31,45 +30,41 @@ def button(text: str, icon_name: str | None = None, variant: str | None = None, 
 
 
 class Card(QFrame):
-    def __init__(self, title: str | None = None, parent: QWidget | None = None, shadow: bool = True):
+    """A glass panel. ``accent=True`` gives the solid lime version used for the headline figure."""
+
+    def __init__(self, title: str | None = None, parent: QWidget | None = None, accent: bool = False):
         super().__init__(parent)
         self.setObjectName("Card")
+        if accent:
+            self.setProperty("accent", True)
         self.body = QVBoxLayout(self)
-        self.body.setContentsMargins(18, 16, 18, 16)
+        self.body.setContentsMargins(20, 18, 20, 18)
         self.body.setSpacing(10)
         if title:
             lbl = QLabel(title)
             lbl.setObjectName("CardTitle")
             self.body.addWidget(lbl)
-        if shadow:
-            effect = QGraphicsDropShadowEffect(self)
-            effect.setBlurRadius(18)
-            effect.setOffset(0, 2)
-            effect.setColor(QColor(31, 58, 104, 22))
-            self.setGraphicsEffect(effect)
 
 
 class StatCard(Card):
-    def __init__(self, label: str, icon_name: str, parent: QWidget | None = None):
-        super().__init__(parent=parent)
-        row = QHBoxLayout()
-        badge = QLabel()
-        badge.setPixmap(icon(icon_name, "#2F6FED", 22).pixmap(22, 22))
-        badge.setFixedSize(40, 40)
-        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        badge.setStyleSheet("background:#E8F0FE;border-radius:10px;")
-        text = QVBoxLayout()
-        text.setSpacing(0)
-        self.value = QLabel("–")
-        self.value.setObjectName("StatValue")
+    def __init__(self, label: str, icon_name: str, parent: QWidget | None = None, accent: bool = False):
+        super().__init__(parent=parent, accent=accent)
+        top = QHBoxLayout()
         cap = QLabel(label)
         cap.setObjectName("StatLabel")
-        text.addWidget(self.value)
-        text.addWidget(cap)
-        row.addWidget(badge, 0, Qt.AlignmentFlag.AlignTop)
-        row.addSpacing(6)
-        row.addLayout(text, 1)
-        self.body.addLayout(row)
+        cap.setWordWrap(True)
+        badge = QLabel()
+        badge.setObjectName("Badge")
+        badge.setPixmap(icon(icon_name, theme.ON_LIME if accent else theme.LIME, 18).pixmap(18, 18))
+        badge.setFixedSize(36, 36)
+        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        top.addWidget(cap, 1, Qt.AlignmentFlag.AlignTop)
+        top.addWidget(badge, 0, Qt.AlignmentFlag.AlignTop)
+        self.value = QLabel("–")
+        self.value.setObjectName("StatValue")
+        self.body.addLayout(top)
+        self.body.addStretch(1)
+        self.body.addWidget(self.value)
 
     def set_value(self, text: str) -> None:
         self.value.setText(text)
@@ -94,7 +89,7 @@ class Banner(QFrame):
             self.hide()
             return
         self.setProperty("level", level)
-        name, color = {"ok": ("check", "#1E8E5A"), "warning": ("alert", "#B7791F")}.get(level, ("alert", "#C53030"))
+        name, color = {"ok": ("check", theme.SUCCESS), "warning": ("alert", theme.WARNING)}.get(level, ("alert", theme.DANGER))
         self.icon.setPixmap(icon(name, color, 18).pixmap(18, 18))
         self.text.setText(text)
         self.style().unpolish(self)
@@ -143,9 +138,25 @@ def set_chip(lbl: QLabel, text: str, kind: str) -> None:
 
 
 def section(text: str) -> QLabel:
-    lbl = QLabel(text)
+    lbl = QLabel(text.upper())
     lbl.setObjectName("SectionTitle")
     return lbl
+
+
+def set_role(lbl: QLabel, name: str) -> None:
+    """Switch a label's style role (objectName) and re-apply the style sheet."""
+    if lbl.objectName() != name:
+        lbl.setObjectName(name)
+        lbl.style().unpolish(lbl)
+        lbl.style().polish(lbl)
+
+
+def set_flag(widget: QWidget, name: str, on: bool) -> None:
+    """Set a true/false style property (e.g. ``negative``) and re-apply the style sheet."""
+    if bool(widget.property(name)) != on:
+        widget.setProperty(name, on)
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)
 
 
 def muted(text: str) -> QLabel:

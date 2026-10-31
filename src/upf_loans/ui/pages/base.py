@@ -14,7 +14,7 @@ class Page(QWidget):
         self.ctx = ctx
         self.setObjectName("Workspace")
         self.root = QVBoxLayout(self)
-        self.root.setContentsMargins(28, 22, 28, 24)
+        self.root.setContentsMargins(32, 6, 28, 26)
         self.root.setSpacing(16)
         self.toolbar = QHBoxLayout()
         self.toolbar.setSpacing(8)

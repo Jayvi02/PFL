@@ -14,6 +14,7 @@ from ...services.errors import ServiceError
 from ..context import AppContext
 from ..widgets.common import Banner, button, error, info, muted
 from ..widgets.table import Column, DataTable
+from .. import theme
 
 
 class ImportDialog(QDialog):
@@ -58,7 +59,7 @@ class ImportDialog(QDialog):
             Column("Row", "row", "int", width=55), Column("PF number", "pf", width=100), Column("Name", "name", stretch=True),
             Column("NIC", "nic", width=120), Column("Salary", "salary", "money", width=110),
             Column("PF balance", "pf_bal", "money", width=120), Column("Problem", "problem", width=260,
-                                                                       color=lambda r: "#C53030" if r["problem"] else None),
+                                                                       color=lambda r: theme.DANGER if r["problem"] else None),
         ])
         lay.addWidget(self.table, 1)
         buttons = QHBoxLayout()

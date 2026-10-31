@@ -28,8 +28,13 @@ class UpdatesPanel(QWidget):
             "works offline. Your data is kept separately and is not changed by an update. A backup is made first."
         ))
         form = QFormLayout()
-        self.version = QLabel(short(updater.current_build()))
+        built = updater.build_date()
+        self.version = QLabel(updater.current_version() + (f"  ·  built {built}" if built else ""))
+        self.version.setObjectName("Strong")
+        self.build = QLabel(short(updater.current_build()))
+        self.build.setObjectName("Muted")
         form.addRow("This version", self.version)
+        form.addRow("Build", self.build)
         card.body.addLayout(form)
 
         self.banner = Banner()
@@ -71,11 +76,13 @@ class UpdatesPanel(QWidget):
             self.banner.show_message("ok", "You have the latest version.")
             return
         when = info.published_at[:10]
+        name = info.latest_version or short(info.latest)
+        self.ctx.events.update_found.emit(info)
         if not updater.is_installed_build():
-            self.banner.show_message("warning", f"A new version ({short(info.latest)}, {when}) is on GitHub. "
+            self.banner.show_message("warning", f"A new version ({name}, {when}) is on GitHub. "
                                      "This copy runs from source, so it can't update itself.")
             return
-        self.banner.show_message("ok", f"A new version is available ({short(info.latest)}, published {when}, "
+        self.banner.show_message("ok", f"Version {name} is available (published {when}, "
                                  f"{info.size // 1_000_000} MB).")
         self.install_btn.show()
 
@@ -124,7 +131,7 @@ class UpdatesPanel(QWidget):
 
     def _downloaded(self, script) -> None:
         with self.ctx.db.session() as s:
-            audit.record(s, self.ctx.operator, "update.install", summary=short(self.info.latest))
+            audit.record(s, self.ctx.operator, "update.install", summary=self.info.latest_version or short(self.info.latest))
         self.banner.show_message("ok", "Installing. The app will close and open again in a few seconds.")
         try:
             updater.launch_install(script)

@@ -69,3 +69,17 @@ def test_download_unpack_and_script(monkeypatch, tmp_path):
     text = script.read_text()
     assert "PID eq 4242" in text and "robocopy" in text and "/E " in text and "/MIR" not in text
     assert str(tmp_path / "app" / "UPFLoanManager.exe") in text
+
+
+def test_version_number_follows_the_build(monkeypatch):
+    monkeypatch.setattr(updater._build, "BUILD_NUMBER", 0)
+    assert updater.current_version().endswith("(dev)")
+    monkeypatch.setattr(updater._build, "BUILD_NUMBER", 42)
+    assert updater.current_version() == f"{updater.config.APP_VERSION}.42"
+
+
+def test_latest_version_read_from_release_title(monkeypatch):
+    data = json.loads(release("new222"))
+    data["name"] = "UPF Loan Manager 1.0.57"
+    monkeypatch.setattr(updater.urllib.request, "urlopen", lambda req, timeout: FakeResponse(json.dumps(data).encode()))
+    assert updater.check().latest_version == "1.0.57"

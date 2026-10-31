@@ -44,11 +44,13 @@ _PATHS = {
     "wallet": '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H19v4"/><path d="M3 7.5v10A2.5 2.5 0 0 0 5.5 20H21V9H5.5A2.5 2.5 0 0 1 3 7.5z"/><path d="M17 14.5h.01"/>',
     "calendar": '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/>',
     "activity": '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+    "sparkle": '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
+    "arrow-up-right": '<path d="M7 17 17 7M8 7h9v9"/>',
+    "refresh": '<path d="M20 12a8 8 0 1 1-2.3-5.7L20 8.5"/><path d="M20 3.5v5h-5"/>',
 }
 
 
-@lru_cache(maxsize=256)
-def icon(name: str, color: str = "#1F3A68", size: int = 20) -> QIcon:
+def _pixmap(name: str, color: str, size: int) -> QPixmap:
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{color}" '
         f'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">{_PATHS[name]}</svg>'
@@ -59,4 +61,19 @@ def icon(name: str, color: str = "#1F3A68", size: int = 20) -> QIcon:
     painter = QPainter(pix)
     renderer.render(painter)
     painter.end()
-    return QIcon(pix)
+    return pix
+
+
+@lru_cache(maxsize=64)
+def toggle_icon(name: str, off_color: str, on_color: str, size: int = 20) -> QIcon:
+    """Icon for a checkable button: one colour when unchecked, another when checked."""
+    ic = QIcon()
+    ic.addPixmap(_pixmap(name, off_color, size), QIcon.Mode.Normal, QIcon.State.Off)
+    ic.addPixmap(_pixmap(name, on_color, size), QIcon.Mode.Normal, QIcon.State.On)
+    ic.addPixmap(_pixmap(name, on_color, size), QIcon.Mode.Active, QIcon.State.On)
+    return ic
+
+
+@lru_cache(maxsize=256)
+def icon(name: str, color: str = "#C9CED8", size: int = 20) -> QIcon:
+    return QIcon(_pixmap(name, color, size))

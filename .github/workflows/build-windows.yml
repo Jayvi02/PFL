@@ -30,7 +30,10 @@ jobs:
 
       - name: Stamp build version
         shell: pwsh
-        run: Set-Content -Path src\upf_loans\_build.py -Encoding ascii -Value "BUILD_SHA = `"$env:GITHUB_SHA`""
+        run: |
+          $date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
+          $lines = @("BUILD_SHA = `"$env:GITHUB_SHA`"", "BUILD_NUMBER = $env:GITHUB_RUN_NUMBER", "BUILD_DATE = `"$date`"")
+          Set-Content -Path src\upf_loans\_build.py -Encoding ascii -Value $lines
 
       - name: Build exe
         run: .venv\Scripts\pyinstaller --noconfirm --clean packaging\upf_loans.spec
@@ -58,4 +61,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest --yes --cleanup-tag 2>$null
-          gh release create latest UPFLoanManager-windows.zip --title "UPF Loan Manager (latest build)" --notes "Built from $env:GITHUB_SHA. Download UPFLoanManager-windows.zip, unzip it, and run UPFLoanManager.exe." --target $env:GITHUB_SHA
+          gh release create latest UPFLoanManager-windows.zip --title "UPF Loan Manager 1.0.$env:GITHUB_RUN_NUMBER" --notes "Built from $env:GITHUB_SHA. Download UPFLoanManager-windows.zip, unzip it, and run UPFLoanManager.exe." --target $env:GITHUB_SHA

@@ -5,6 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QLineEdit,
     QTabWidget, QVBoxLayout, QWidget,
@@ -29,11 +30,14 @@ RULE_FIELDS = [
 
 class SettingsPage(Page):
     title = "Settings"
-    subtitle = "Loan rules, UGC details, backups and updates"
+    subtitle = "Loan rules, UGC details, backups and app updates"
 
     def __init__(self, ctx, parent=None):
         super().__init__(ctx, parent)
         self.tabs = QTabWidget()
+        self.check_updates_btn = button("Check for updates", "refresh", "primary")
+        self.check_updates_btn.clicked.connect(lambda: self.open_with("updates"))
+        self.tabs.setCornerWidget(self.check_updates_btn, Qt.Corner.TopRightCorner)
         self.root.addWidget(self.tabs, 1)
         self.tabs.addTab(self._rules_tab(), "Loan rules")
         self.tabs.addTab(self._ugc_tab(), "University && UGC")
