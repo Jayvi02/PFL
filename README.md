@@ -16,6 +16,12 @@ uv pip install -p .venv -e ".[dev]"
 ```
 
 
+## Auto-updating launcher (while the app is still changing)
+
+1. Install [Git](https://git-scm.com/download/win) and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+2. Download [install_launcher.bat](https://github.com/Jayvi02/PFL/raw/main/packaging/install_launcher.bat) and double-click it.
+3. Use the new **UPF Loan Manager** shortcut on the desktop. Each time it opens, it fetches the latest version from GitHub first (if the PC is online), so changes appear the next time you start it.
+
 ## Build the Windows program
 
 GitHub builds it automatically on every change to `main`. Download `UPFLoanManager-windows.zip` from the [latest release](https://github.com/Jayvi02/PFL/releases/tag/latest), unzip it, and run `UPFLoanManager.exe`.
