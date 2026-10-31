@@ -183,22 +183,6 @@ class SystemSetting(Base):
     value: Mapped[str] = mapped_column(Text, default="")
 
 
-class User(TimestampMixin, Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String(50), unique=True)
-    full_name: Mapped[str] = mapped_column(String(100), default="")
-    password_hash: Mapped[str] = mapped_column(String(255))
-    role: Mapped[str] = mapped_column(String(10), default="officer")  # admin | officer
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    last_login_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-
-    @property
-    def is_admin(self) -> bool:
-        return self.role == "admin"
-
-
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 

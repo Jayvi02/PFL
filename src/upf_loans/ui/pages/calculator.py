@@ -328,7 +328,7 @@ class CalculatorPage(Page):
             return
         try:
             with self.ctx.db.session() as s:
-                entry, result = renewals.save_entry(s, self.ctx.user, batch_id, emp_id, self._inputs(), month, year)
+                entry, result = renewals.save_entry(s, self.ctx.operator, batch_id, emp_id, self._inputs(), month, year)
                 name = s.get(Employee, emp_id).name
         except ServiceError as exc:
             error(self, str(exc))

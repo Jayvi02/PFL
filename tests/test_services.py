@@ -4,8 +4,8 @@ import pytest
 from openpyxl import Workbook, load_workbook
 
 from upf_loans.core.eligibility import LoanInputs
-from upf_loans.services import auth, backup, employees, exports, importer, renewals, settings
-from upf_loans.services.errors import PermissionDenied, ServiceError
+from upf_loans.services import backup, employees, exports, importer, renewals, settings
+from upf_loans.services.errors import ServiceError
 
 
 def add_employee(s, admin, pf="R 001365", name="Perera A.B. Mr.", nic="680410054V"):
@@ -70,15 +70,12 @@ def test_last_loan_suggested_from_finalized_month(db, admin):
         assert renewals.suggested_last_loan(s, emp.id, b2) == (11, 2024)
 
 
-def test_reopen_requires_admin_and_reason(db, admin):
+def test_reopen_requires_reason(db, admin):
     with db.session() as s:
-        officer = auth.create_user(s, admin, "clerk", "password123", role="officer")
         emp = add_employee(s, admin)
         b = renewals.create_batch(s, admin, 11, 2024)
         renewals.save_entry(s, admin, b.id, emp.id, ROW7, 10, 2023)
         renewals.finalize(s, admin, b.id, "14.11.2024")
-        with pytest.raises(PermissionDenied):
-            renewals.reopen(s, officer, b.id, "typo")
         with pytest.raises(ServiceError):
             renewals.reopen(s, admin, b.id, " ")
         assert renewals.reopen(s, admin, b.id, "typo").status == "draft"
@@ -86,20 +83,12 @@ def test_reopen_requires_admin_and_reason(db, admin):
 
 def test_settings_change_rules_used_for_new_calculations(db, admin):
     with db.session() as s:
-        settings.save(s, admin.username, {"salary_multiplier": "24"})
+        settings.save(s, admin, {"salary_multiplier": "24"})
         assert settings.loan_rules(s).salary_multiplier == D(24)
         with pytest.raises(ServiceError):
-            settings.save(s, admin.username, {"pf_balance_ratio": "1.5"})
+            settings.save(s, admin, {"pf_balance_ratio": "1.5"})
         with pytest.raises(ServiceError):
-            settings.save(s, admin.username, {"salary_multiplier": "abc"})
-
-
-def test_auth(db, admin):
-    with db.session() as s:
-        assert auth.authenticate(s, "ADMIN", "password123") is not None
-        assert auth.authenticate(s, "admin", "wrong-password") is None
-        with pytest.raises(ServiceError):
-            auth.create_user(s, admin, "short", "123")
+            settings.save(s, admin, {"salary_multiplier": "abc"})
 
 
 def test_exports(db, admin, tmp_path):

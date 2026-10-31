@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .errors import ServiceError
 
-REQUIRED_TABLES = {"employees", "renewal_batches", "renewal_entries", "users", "audit_logs"}
+REQUIRED_TABLES = {"employees", "renewal_batches", "renewal_entries", "audit_logs"}
 
 
 def create_backup(db_path: Path, target_dir: Path, label: str = "manual") -> Path:

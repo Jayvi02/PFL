@@ -7,7 +7,7 @@ import sys
 import traceback
 
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from . import config
 from .db.session import Database
@@ -72,19 +72,11 @@ def main() -> int:
         return 1
 
     from .ui.context import AppContext, Events
-    from .ui.dialogs.login import LoginDialog
     from .ui.main_window import MainWindow
 
-    while True:
-        login = LoginDialog(db)
-        if login.exec() != QDialog.DialogCode.Accepted or login.user is None:
-            return 0
-        ctx = AppContext(db=db, user=login.user, events=Events())
-        window = MainWindow(ctx)
-        window.show()
-        app.exec()
-        if not window.logout_requested:
-            return 0
+    window = MainWindow(AppContext(db=db, events=Events()))
+    window.show()
+    return app.exec()
 
 
 if __name__ == "__main__":

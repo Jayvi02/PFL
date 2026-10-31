@@ -1,7 +1,6 @@
 import pytest
 
 from upf_loans.db.session import Database
-from upf_loans.services import auth
 
 
 @pytest.fixture
@@ -12,7 +11,6 @@ def db(tmp_path):
 
 
 @pytest.fixture
-def admin(db):
-    with db.session() as s:
-        user = auth.create_user(s, None, "admin", "password123", "Admin")
-    return user
+def admin():
+    """Name recorded in the audit log for test actions."""
+    return "officer"

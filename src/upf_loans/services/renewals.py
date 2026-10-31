@@ -12,9 +12,9 @@ from sqlalchemy.orm import Session
 from ..core.eligibility import LoanInputs, LoanResult, calculate
 from ..core.money import format_money
 from ..core.ugc_text import UgcRow
-from ..db.models import Employee, RenewalBatch, RenewalEntry, User
+from ..db.models import Employee, RenewalBatch, RenewalEntry
 from . import audit, settings
-from .errors import PermissionDenied, ServiceError
+from .errors import ServiceError
 
 MONTHS = [
     "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
@@ -42,7 +42,7 @@ def get_batch(session: Session, batch_id: int) -> RenewalBatch:
     return batch
 
 
-def create_batch(session: Session, actor: User, month: int, year: int) -> RenewalBatch:
+def create_batch(session: Session, actor: str, month: int, year: int) -> RenewalBatch:
     if not 1 <= month <= 12:
         raise ServiceError("Month must be 1 to 12.")
     if not 2000 <= year <= 2100:
@@ -55,7 +55,7 @@ def create_batch(session: Session, actor: User, month: int, year: int) -> Renewa
     batch = RenewalBatch(request_month=month, request_year=year, letter_date=date.today().strftime("%d.%m.%Y"))
     session.add(batch)
     session.flush()
-    audit.record(session, actor.username, "batch.create", "batch", batch.id, batch_label(batch))
+    audit.record(session, actor, "batch.create", "batch", batch.id, batch_label(batch))
     return batch
 
 
@@ -94,7 +94,7 @@ def suggested_last_loan(session: Session, employee_id: int, batch: RenewalBatch 
 
 def save_entry(
     session: Session,
-    actor: User,
+    actor: str,
     batch_id: int,
     employee_id: int,
     inputs: LoanInputs,
@@ -132,7 +132,7 @@ def save_entry(
     session.flush()
     audit.record(
         session,
-        actor.username,
+        actor,
         action,
         "entry",
         entry.id,
@@ -143,20 +143,20 @@ def save_entry(
     return entry, result
 
 
-def remove_entry(session: Session, actor: User, entry_id: int) -> None:
+def remove_entry(session: Session, actor: str, entry_id: int) -> None:
     entry = session.get(RenewalEntry, entry_id)
     if entry is None:
         raise ServiceError("Entry not found.")
     _require_draft(entry.batch)
     audit.record(
-        session, actor.username, "entry.remove", "entry", entry.id,
+        session, actor, "entry.remove", "entry", entry.id,
         f"{entry.employee.pf_number} from {batch_label(entry.batch)}",
         {n: str(getattr(entry, n)) for n in RenewalEntry.INPUT_FIELDS},
     )
     session.delete(entry)
 
 
-def finalize(session: Session, actor: User, batch_id: int, letter_date: str) -> RenewalBatch:
+def finalize(session: Session, actor: str, batch_id: int, letter_date: str) -> RenewalBatch:
     batch = get_batch(session, batch_id)
     _require_draft(batch)
     if not batch.entries:
@@ -168,28 +168,24 @@ def finalize(session: Session, actor: User, batch_id: int, letter_date: str) -> 
     batch.status = "finalized"
     batch.letter_date = letter_date
     batch.finalized_at = datetime.now()
-    batch.finalized_by = actor.username
-    audit.record(session, actor.username, "batch.finalize", "batch", batch.id, batch_label(batch))
+    batch.finalized_by = actor
+    audit.record(session, actor, "batch.finalize", "batch", batch.id, batch_label(batch))
     return batch
 
 
-def reopen(session: Session, actor: User, batch_id: int, reason: str) -> RenewalBatch:
-    if not actor.is_admin:
-        raise PermissionDenied("Only an administrator can reopen a finalized month.")
+def reopen(session: Session, actor: str, batch_id: int, reason: str) -> RenewalBatch:
     if not reason.strip():
         raise ServiceError("A reason is required to reopen a finalized month.")
     batch = get_batch(session, batch_id)
     batch.status = "draft"
-    audit.record(session, actor.username, "batch.reopen", "batch", batch.id, f"{batch_label(batch)}: {reason}")
+    audit.record(session, actor, "batch.reopen", "batch", batch.id, f"{batch_label(batch)}: {reason}")
     return batch
 
 
-def delete_batch(session: Session, actor: User, batch_id: int) -> None:
+def delete_batch(session: Session, actor: str, batch_id: int) -> None:
     batch = get_batch(session, batch_id)
     _require_draft(batch)
-    if batch.entries and not actor.is_admin:
-        raise PermissionDenied("Only an administrator can delete a month that has entries.")
-    audit.record(session, actor.username, "batch.delete", "batch", batch.id, f"{batch_label(batch)} ({len(batch.entries)} entries)")
+    audit.record(session, actor, "batch.delete", "batch", batch.id, f"{batch_label(batch)} ({len(batch.entries)} entries)")
     session.delete(batch)
 
 

@@ -203,7 +203,7 @@ class RenewalsPage(Page):
             b.setEnabled(not self.locked)
         self.lock_btn.setText("Reopen" if self.locked else "Finalize")
         self.lock_btn.setIcon(icon("unlock" if self.locked else "lock"))
-        self.lock_btn.setEnabled(not self.locked or self.ctx.is_admin)
+        self.lock_btn.setEnabled(True)
         if not rows:
             self.banner.show_message("warning", "No employees in this month yet. Use “Add employee” or “Import Excel”.")
         elif problems:
@@ -221,7 +221,7 @@ class RenewalsPage(Page):
             return
         try:
             with self.ctx.db.session() as s:
-                batch = renewals.create_batch(s, self.ctx.user, dlg.month.value(), dlg.year.value())
+                batch = renewals.create_batch(s, self.ctx.operator, dlg.month.value(), dlg.year.value())
                 self.batch_id = batch.id
         except ServiceError as exc:
             error(self, str(exc))
@@ -252,7 +252,7 @@ class RenewalsPage(Page):
             return
         try:
             with self.ctx.db.session() as s:
-                renewals.remove_entry(s, self.ctx.user, row["entry_id"])
+                renewals.remove_entry(s, self.ctx.operator, row["entry_id"])
         except ServiceError as exc:
             error(self, str(exc))
         self.ctx.events.data_changed.emit("renewals")
@@ -269,18 +269,18 @@ class RenewalsPage(Page):
                 if not ok:
                     return
                 with self.ctx.db.session() as s:
-                    renewals.reopen(s, self.ctx.user, self.batch_id, reason)
+                    renewals.reopen(s, self.ctx.operator, self.batch_id, reason)
             else:
                 letter, ok = QInputDialog.getText(self, "Finalize month",
                                                   "Letter date printed under the signature (dd.mm.yyyy):",
                                                   QLineEdit.EchoMode.Normal, date.today().strftime("%d.%m.%Y"))
                 if not ok:
                     return
-                if not confirm(self, "Finalize month", "After finalizing, the month can't be edited unless an "
-                               "administrator reopens it. Continue?", "Finalize"):
+                if not confirm(self, "Finalize month", "After finalizing, the month is locked. You can reopen it later "
+                               "with a reason if a change is needed. Continue?", "Finalize"):
                     return
                 with self.ctx.db.session() as s:
-                    renewals.finalize(s, self.ctx.user, self.batch_id, letter.strip())
+                    renewals.finalize(s, self.ctx.operator, self.batch_id, letter.strip())
         except ServiceError as exc:
             error(self, str(exc))
             return
@@ -309,7 +309,7 @@ def export_file(parent: QWidget, ctx, batch_id: int, kind: str) -> None:
           "calc": exports.export_calculation_excel, "pdf": exports.export_pdf}[kind]
     try:
         with ctx.db.session() as s:
-            fn(s, ctx.user, batch_id, Path(path))
+            fn(s, ctx.operator, batch_id, Path(path))
     except (ServiceError, OSError) as exc:
         error(parent, str(exc), "Export failed")
         return

@@ -114,7 +114,7 @@ class EmployeeDialog(QDialog):
                     if not confirm(self, "Duplicate NIC", f"{dup.name} ({dup.pf_number}) already has NIC {data.nic}.\n"
                                    "Save anyway? (One person can hold two PF numbers.)"):
                         return
-                emp = employees.save(s, self.ctx.user, data, self.employee_id)
+                emp = employees.save(s, self.ctx.operator, data, self.employee_id)
                 self.employee_id = emp.id
         except ServiceError as exc:
             from ..widgets.common import error

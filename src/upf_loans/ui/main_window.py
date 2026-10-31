@@ -17,7 +17,6 @@ from .pages.employees import EmployeesPage
 from .pages.renewals import RenewalsPage
 from .pages.reports import ReportsPage
 from .pages.settings import SettingsPage
-from .widgets.common import button
 
 NAV = [
     ("dashboard", "Dashboard", "dashboard", DashboardPage),
@@ -33,7 +32,6 @@ class MainWindow(QMainWindow):
     def __init__(self, ctx: AppContext):
         super().__init__()
         self.ctx = ctx
-        self.logout_requested = False
         self.setWindowTitle(APP_NAME)
         self.resize(1360, 840)
         self.setMinimumSize(1100, 680)
@@ -116,13 +114,6 @@ class MainWindow(QMainWindow):
         self.search.returnPressed.connect(self._global_search)
         hl.addWidget(self.search)
         hl.addSpacing(16)
-        role = "Administrator" if ctx.is_admin else "Officer"
-        user = QLabel(f"{ctx.user.full_name or ctx.user.username}\n{role}")
-        user.setObjectName("UserLabel")
-        hl.addWidget(user)
-        logout = button("", "logout", tooltip="Sign out")
-        logout.clicked.connect(self._logout)
-        hl.addWidget(logout)
         main.addWidget(header)
         main.addWidget(self.stack, 1)
         root.addLayout(main, 1)
@@ -144,7 +135,3 @@ class MainWindow(QMainWindow):
         text = self.search.text().strip()
         self.show_page("employees", text)
         self.search.clear()
-
-    def _logout(self) -> None:
-        self.logout_requested = True
-        self.close()
