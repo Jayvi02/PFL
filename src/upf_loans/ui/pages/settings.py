@@ -16,6 +16,7 @@ from ...services.errors import ServiceError
 from ..widgets.common import Card, button, confirm, error, info, muted
 from ..widgets.table import Column, DataTable
 from .base import Page
+from .updates_panel import UpdatesPanel
 
 RULE_FIELDS = [
     ("salary_multiplier", "Salary multiplier", "Cap 1: salary × this (Excel column U, default 48)"),
@@ -28,7 +29,7 @@ RULE_FIELDS = [
 
 class SettingsPage(Page):
     title = "Settings"
-    subtitle = "Loan rules, UGC details and backups"
+    subtitle = "Loan rules, UGC details, backups and updates"
 
     def __init__(self, ctx, parent=None):
         super().__init__(ctx, parent)
@@ -38,6 +39,8 @@ class SettingsPage(Page):
         self.tabs.addTab(self._ugc_tab(), "University && UGC")
         self.tabs.addTab(self._backup_tab(), "Backup && restore")
         self.tabs.addTab(self._audit_tab(), "Audit log")
+        self.updates = UpdatesPanel(ctx)
+        self.tabs.addTab(self.updates, "Updates")
 
     # ----- tabs
     def _rules_tab(self) -> QWidget:
@@ -143,7 +146,13 @@ class SettingsPage(Page):
         return w
 
     # ----- data
+    def open_with(self, arg) -> None:
+        if arg == "updates":
+            self.tabs.setCurrentWidget(self.updates)
+            self.updates.check()
+
     def refresh(self) -> None:
+        self.updates.refresh()
         with self.ctx.db.session() as s:
             values = settings.get_all(s)
             logs = [{"when": a.created_at.strftime("%d %b %Y %H:%M:%S") if a.created_at else "", "user": a.username,

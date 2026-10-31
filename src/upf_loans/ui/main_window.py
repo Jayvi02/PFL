@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtWidgets import (
     QButtonGroup, QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QStackedWidget,
     QVBoxLayout, QWidget,
 )
 
 from ..config import APP_NAME, APP_VERSION
+from ..services import updater
+from . import background
 from .context import AppContext
 from .icons import icon
 from .pages.calculator import CalculatorPage
@@ -17,6 +19,7 @@ from .pages.employees import EmployeesPage
 from .pages.renewals import RenewalsPage
 from .pages.reports import ReportsPage
 from .pages.settings import SettingsPage
+from .widgets.common import button
 
 NAV = [
     ("dashboard", "Dashboard", "dashboard", DashboardPage),
@@ -113,7 +116,11 @@ class MainWindow(QMainWindow):
         self.search.addAction(icon("search", "#6B778C"), QLineEdit.ActionPosition.LeadingPosition)
         self.search.returnPressed.connect(self._global_search)
         hl.addWidget(self.search)
-        hl.addSpacing(16)
+        hl.addSpacing(12)
+        self.update_btn = button("Update available", "download", "primary")
+        self.update_btn.clicked.connect(lambda: self.show_page("settings", "updates"))
+        self.update_btn.hide()
+        hl.addWidget(self.update_btn)
         main.addWidget(header)
         main.addWidget(self.stack, 1)
         root.addLayout(main, 1)
@@ -121,6 +128,15 @@ class MainWindow(QMainWindow):
 
         ctx.events.navigate.connect(self.show_page)
         self.show_page("dashboard")
+        if updater.is_installed_build():
+            QTimer.singleShot(3000, self._quiet_update_check)
+
+    def _quiet_update_check(self) -> None:
+        """Check GitHub once at start-up; stay silent when offline."""
+        def done(info):
+            if info.available:
+                self.update_btn.show()
+        background.run(updater.check, done, lambda _msg: None)
 
     def show_page(self, key: str, arg=None) -> None:
         page = self.pages[key]

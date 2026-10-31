@@ -28,6 +28,10 @@ jobs:
       - name: Run tests
         run: .venv\Scripts\python -m pytest -q
 
+      - name: Stamp build version
+        shell: pwsh
+        run: Set-Content -Path src\upf_loans\_build.py -Encoding ascii -Value "BUILD_SHA = `"$env:GITHUB_SHA`""
+
       - name: Build exe
         run: .venv\Scripts\pyinstaller --noconfirm --clean packaging\upf_loans.spec
 

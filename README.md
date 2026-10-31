@@ -18,7 +18,7 @@ uv pip install -p .venv -e ".[dev]"
 
 ## Build the Windows program
 
-GitHub builds it automatically on every change to `main`. Download `UPFLoanManager-windows.zip` from the [latest release](https://github.com/Jayvi02/PFL/releases/tag/latest), unzip it, and run `UPFLoanManager.exe`.
+GitHub builds it automatically on every change to `main`. The first time, download `UPFLoanManager-windows.zip` from the [latest release](https://github.com/Jayvi02/PFL/releases/tag/latest), unzip it somewhere you own (for example `C:\UPFLoanManager`), and run `UPFLoanManager.exe`. After that, the app checks GitHub when it starts; when a newer build exists an **Update available** button appears at the top, and **Settings → Updates** downloads and installs it (a backup is made first; your data is not touched).
 
 To build it yourself instead, run `packaging\build_windows.bat`. It runs the tests, builds `dist\UPFLoanManager\UPFLoanManager.exe`, then runs the exe's `--self-test` check. Copy the whole `dist\UPFLoanManager` folder to the office PC. Nothing needs to be installed there.
 
