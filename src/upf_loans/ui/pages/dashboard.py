@@ -58,7 +58,7 @@ class DashboardPage(Page):
 
         activity = Card("Recent activity")
         self.activity = DataTable([
-            Column("When", "when", width=140), Column("User", "user", width=90), Column("What", "what", stretch=True),
+            Column("When", "when", width=140), Column("By", "user", width=90), Column("What", "what", stretch=True),
         ])
         activity.body.addWidget(self.activity)
         row.addWidget(activity, 2)

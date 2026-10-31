@@ -9,7 +9,7 @@ a = Analysis(
     pathex=[str(SRC)],
     datas=[(str(SRC / "upf_loans" / "db" / "migrations"), "upf_loans/db/migrations")],
     hiddenimports=["upf_loans.db.models", "sqlalchemy.dialects.sqlite", "alembic.runtime.migration",
-                   "alembic.ddl.sqlite", "argon2._ffi", "PySide6.QtSvg"],
+                   "alembic.ddl.sqlite", "PySide6.QtSvg"],
     excludes=["tkinter", "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets", "PySide6.Qt3DCore",
               "PySide6.QtQuick", "PySide6.QtQml", "PySide6.QtMultimedia"],
     noarchive=False,

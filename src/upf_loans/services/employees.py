@@ -8,7 +8,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from ..core.validation import normalise_nic, normalise_pf_number, validate_nic, validate_pf_number
-from ..db.models import Employee, RenewalEntry, User
+from ..db.models import Employee, RenewalEntry
 from . import audit
 from .errors import ServiceError
 
@@ -63,7 +63,7 @@ def duplicate_nic(session: Session, nic: str, employee_id: int | None = None) ->
     return None
 
 
-def save(session: Session, actor: User, data: EmployeeData, employee_id: int | None = None) -> Employee:
+def save(session: Session, actor: str, data: EmployeeData, employee_id: int | None = None) -> Employee:
     data = data.cleaned()
     errors = validate(session, data, employee_id)
     if errors:
@@ -72,7 +72,7 @@ def save(session: Session, actor: User, data: EmployeeData, employee_id: int | N
         emp = Employee(**{k: getattr(data, k) for k in EDITABLE})
         session.add(emp)
         session.flush()
-        audit.record(session, actor.username, "employee.create", "employee", emp.id, f"{emp.pf_number} {emp.name}")
+        audit.record(session, actor, "employee.create", "employee", emp.id, f"{emp.pf_number} {emp.name}")
         return emp
     emp = session.get(Employee, employee_id)
     if emp is None:
@@ -84,7 +84,7 @@ def save(session: Session, actor: User, data: EmployeeData, employee_id: int | N
             changes[key] = {"from": getattr(emp, key), "to": new}
             setattr(emp, key, new)
     if changes:
-        audit.record(session, actor.username, "employee.update", "employee", emp.id, emp.pf_number, changes)
+        audit.record(session, actor, "employee.update", "employee", emp.id, emp.pf_number, changes)
     return emp
 
 

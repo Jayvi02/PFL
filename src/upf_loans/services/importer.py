@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from ..core.eligibility import LoanInputs
 from ..core.money import MoneyError, to_decimal
-from ..db.models import Employee, User
+from ..db.models import Employee
 from . import audit, employees, renewals
 from .errors import ServiceError
 
@@ -124,7 +124,7 @@ def read_main_sheet(path: Path, sheet_name: str | None = None, first_row: int = 
     return rows
 
 
-def import_rows(session: Session, actor: User, rows: list[ImportRow], batch_id: int | None) -> ImportReport:
+def import_rows(session: Session, actor: str, rows: list[ImportRow], batch_id: int | None) -> ImportReport:
     """Import valid rows; rows with errors are skipped and reported."""
     report = ImportReport(rows=rows)
     for item in rows:
@@ -152,7 +152,7 @@ def import_rows(session: Session, actor: User, rows: list[ImportRow], batch_id: 
             except ServiceError as exc:
                 item.errors.append(str(exc))
     audit.record(
-        session, actor.username, "import.excel", "employee",
+        session, actor, "import.excel", "employee",
         summary=f"{report.created} created, {report.updated} updated, {report.entries} calculations, {len(report.errors)} errors",
     )
     return report

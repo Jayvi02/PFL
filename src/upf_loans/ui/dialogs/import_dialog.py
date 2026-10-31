@@ -119,7 +119,7 @@ class ImportDialog(QDialog):
     def _import(self) -> None:
         try:
             with self.ctx.db.session() as s:
-                report = importer.import_rows(s, self.ctx.user, self.rows, self.batch.currentData())
+                report = importer.import_rows(s, self.ctx.operator, self.rows, self.batch.currentData())
         except ServiceError as exc:
             error(self, str(exc))
             return

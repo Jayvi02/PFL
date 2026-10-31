@@ -86,7 +86,7 @@ class ReportsPage(Page):
         try:
             with self.ctx.db.session() as s:
                 write_employee_workbook(Path(path), employees.search(s))
-                audit.record(s, self.ctx.user.username, "export.employees", "employee", summary=Path(path).name)
+                audit.record(s, self.ctx.operator, "export.employees", "employee", summary=Path(path).name)
         except OSError as exc:
             error(self, str(exc))
             return

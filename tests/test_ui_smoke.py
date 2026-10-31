@@ -21,7 +21,7 @@ def test_main_window_pages(qtbot, db, admin):
                             pf_balance=D("3622669.53"), contributions_since=D("105650.79"),
                             loan_balance=D(1760970), loan_deductions_since=D(150500)), 10, 2023)
         emp_id, batch_id = emp.id, b.id
-    ctx = AppContext(db=db, user=admin, events=Events())
+    ctx = AppContext(db=db, events=Events(), operator=admin)
     win = MainWindow(ctx)
     qtbot.addWidget(win)
     win.show()

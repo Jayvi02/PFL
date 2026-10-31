@@ -7,7 +7,6 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from ..core.ugc_text import build_file
-from ..db.models import User
 from ..reports.calculation_excel import write_calculation_workbook
 from ..reports.pdf import write_batch_pdf
 from ..reports.ugc_excel import write_ugc_workbook
@@ -21,7 +20,7 @@ def check_ugc_text(session: Session, batch_id: int) -> list[str]:
     return errors
 
 
-def export_ugc_text(session: Session, actor: User, batch_id: int, path: Path) -> Path:
+def export_ugc_text(session: Session, actor: str, batch_id: int, path: Path) -> Path:
     batch = renewals.get_batch(session, batch_id)
     if not batch.entries:
         raise ServiceError("This month has no employees.")
@@ -30,33 +29,33 @@ def export_ugc_text(session: Session, actor: User, batch_id: int, path: Path) ->
     if errors:
         raise ServiceError("The UGC text file was not created:\n" + "\n".join(errors))
     Path(path).write_bytes(text.encode("ascii"))
-    audit.record(session, actor.username, "export.ugc_text", "batch", batch.id,
+    audit.record(session, actor, "export.ugc_text", "batch", batch.id,
                  f"{renewals.batch_label(batch)} -> {Path(path).name}")
     return Path(path)
 
 
-def export_ugc_excel(session: Session, actor: User, batch_id: int, path: Path) -> Path:
+def export_ugc_excel(session: Session, actor: str, batch_id: int, path: Path) -> Path:
     batch = renewals.get_batch(session, batch_id)
     s = settings.get_all(session)
     write_ugc_workbook(path, renewals.ugc_rows(session, batch), batch.request_month, s["university_name"],
                        s["signatory_title"], batch.letter_date)
-    audit.record(session, actor.username, "export.ugc_excel", "batch", batch.id,
+    audit.record(session, actor, "export.ugc_excel", "batch", batch.id,
                  f"{renewals.batch_label(batch)} -> {Path(path).name}")
     return Path(path)
 
 
-def export_calculation_excel(session: Session, actor: User, batch_id: int, path: Path) -> Path:
+def export_calculation_excel(session: Session, actor: str, batch_id: int, path: Path) -> Path:
     batch = renewals.get_batch(session, batch_id)
     title = f"{renewals.batch_label(batch).upper()}  PF LOAN - {settings.get(session, 'university_name')}"
     write_calculation_workbook(path, batch, settings.loan_rules(session), title)
-    audit.record(session, actor.username, "export.calculation_excel", "batch", batch.id, Path(path).name)
+    audit.record(session, actor, "export.calculation_excel", "batch", batch.id, Path(path).name)
     return Path(path)
 
 
-def export_pdf(session: Session, actor: User, batch_id: int, path: Path) -> Path:
+def export_pdf(session: Session, actor: str, batch_id: int, path: Path) -> Path:
     batch = renewals.get_batch(session, batch_id)
     write_batch_pdf(path, batch, settings.get(session, "university_name"))
-    audit.record(session, actor.username, "export.pdf", "batch", batch.id, Path(path).name)
+    audit.record(session, actor, "export.pdf", "batch", batch.id, Path(path).name)
     return Path(path)
 
 
