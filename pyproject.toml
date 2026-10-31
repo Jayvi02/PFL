@@ -1,0 +1,30 @@
+[project]
+name = "upf-loans"
+version = "0.1.0"
+description = "University Provident Fund loan renewal manager (offline Windows desktop app)"
+requires-python = ">=3.12"
+dependencies = [
+    "PySide6>=6.7",
+    "SQLAlchemy>=2.0",
+    "alembic>=1.13",
+    "openpyxl>=3.1",
+    "reportlab>=4.0",
+    "argon2-cffi>=23.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-qt>=4.4", "pyinstaller>=6.6"]
+
+[project.gui-scripts]
+upf-loans = "upf_loans.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/upf_loans"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
