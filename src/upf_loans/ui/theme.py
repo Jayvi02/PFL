@@ -38,10 +38,8 @@ GLASS_EDGE = "rgba(255,255,255,0.18)"
 LINE = "rgba(255,255,255,0.07)"
 
 MONO = '"Cascadia Mono", "JetBrains Mono", "SF Mono", Consolas, "DejaVu Sans Mono", monospace'
-# Source Serif 4 is bundled (assets/fonts, SIL Open Font License) for the calm, bookish reading feel.
-SERIF = '"Source Serif 4", Georgia, "Times New Roman", serif'
-SANS = SERIF
-DISPLAY = SERIF
+SANS = '"Segoe UI Variable Text", "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif'
+DISPLAY = '"Segoe UI Variable Display", "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif'
 
 # Kept for code that colours single values (negative amounts, highlighted caps).
 NEGATIVE = DANGER
@@ -52,7 +50,7 @@ _CHIP = "border-radius: 10px; padding: 3px 11px; font-weight: 600; font-size: 8.
 STYLESHEET = f"""
 * {{
     font-family: {SANS};
-    font-size: 10.5pt;
+    font-size: 10pt;
     color: {TEXT};
     outline: 0;
 }}
@@ -282,9 +280,9 @@ def apply(app) -> None:
 
     resources.register()
     app.setStyle("Fusion")
-    font = QFont("Source Serif 4")
-    font.setStyleHint(QFont.StyleHint.Serif)
-    font.setPointSizeF(10.5)
+    font = QFont("Segoe UI")
+    font.setStyleHint(QFont.StyleHint.SansSerif)
+    font.setPointSizeF(10)
     app.setFont(font)
     app.setPalette(palette())
     app.setStyleSheet(STYLESHEET)

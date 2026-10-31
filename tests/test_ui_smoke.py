@@ -76,8 +76,3 @@ def test_animations_finish_in_a_plain_state(qtbot):
     assert page.graphicsEffect() is not None
     qtbot.waitUntil(lambda: page.graphicsEffect() is None, timeout=2000)
 
-
-def test_bundled_serif_font_loads(qtbot):
-    from upf_loans.ui import resources
-
-    assert any("Source Serif 4" in f for f in resources.register_fonts())
