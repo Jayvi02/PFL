@@ -1,3 +1,5 @@
-"""Build identity. The GitHub build replaces BUILD_SHA with the commit it was built from."""
+"""Build identity. The GitHub build rewrites this file with the commit, run number and date."""
 
 BUILD_SHA = "dev"
+BUILD_NUMBER = 0
+BUILD_DATE = ""

@@ -13,6 +13,7 @@ from ..icons import icon
 from ..widgets.common import button, error, info
 from ..widgets.table import Column, DataTable
 from .base import Page
+from .. import theme
 
 
 class EmployeesPage(Page):
@@ -23,7 +24,7 @@ class EmployeesPage(Page):
         super().__init__(ctx, parent)
         self.search = QLineEdit()
         self.search.setPlaceholderText("Search name, PF number or NIC")
-        self.search.addAction(icon("search", "#6B778C"), QLineEdit.ActionPosition.LeadingPosition)
+        self.search.addAction(icon("search", theme.MUTED), QLineEdit.ActionPosition.LeadingPosition)
         self.search.setClearButtonEnabled(True)
         self.search.setMinimumWidth(320)
         self.search.textChanged.connect(lambda t: self.table.set_filter(t))
@@ -47,7 +48,7 @@ class EmployeesPage(Page):
             Column("PF number", "pf_number", width=110), Column("Name", "name", stretch=True),
             Column("NIC", "nic", width=130), Column("Department", "department", width=200),
             Column("Category", "category", width=110), Column("Designation", "designation", width=180),
-            Column("Status", "status", width=90, color=lambda r: "#C53030" if r["status"] == "Inactive" else "#1E8E5A"),
+            Column("Status", "status", width=90, color=lambda r: theme.DANGER if r["status"] == "Inactive" else theme.SUCCESS),
         ])
         self.table.activated_row.connect(lambda r: self._edit(r["id"]))
         self.root.addWidget(self.table, 1)

@@ -6,16 +6,17 @@ from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel
 from sqlalchemy import func, select
 
 from ...core.money import format_money
-from ...db.models import Employee, RenewalBatch, RenewalEntry
+from ...db.models import Employee, RenewalBatch
 from ...services import audit, renewals
-from ..widgets.common import Card, StatCard, button, chip, muted
+from ..widgets.chart import PillChart
+from ..widgets.common import Card, StatCard, button, chip, muted, set_chip
 from ..widgets.table import Column, DataTable
 from .base import Page
 
 
 class DashboardPage(Page):
     title = "Dashboard"
-    subtitle = "Overview of employees and monthly renewals"
+    subtitle = "Track employees and monthly loan renewals"
 
     def __init__(self, ctx, parent=None):
         super().__init__(ctx, parent)
@@ -27,21 +28,35 @@ class DashboardPage(Page):
         grid = QGridLayout()
         grid.setSpacing(14)
         self.cards = {
+            "approved": StatCard("Loans approved · latest month (Rs.)", "wallet", accent=True),
+            "payable": StatCard("Balance payable · latest month (Rs.)", "report"),
             "employees": StatCard("Active employees", "users"),
             "months": StatCard("Renewal months on record", "calendar"),
-            "approved": StatCard("Loans approved, latest month (Rs.)", "wallet"),
-            "payable": StatCard("Balance payable, latest month (Rs.)", "report"),
         }
         for i, card in enumerate(self.cards.values()):
+            card.setMinimumHeight(118)
             grid.addWidget(card, 0, i)
         self.root.addLayout(grid)
 
         row = QHBoxLayout()
         row.setSpacing(14)
+        chart_card = Card()
+        head = QHBoxLayout()
+        t = QLabel("Loans approved by month")
+        t.setObjectName("CardTitle")
+        self.chart_total = chip("", "lime")
+        head.addWidget(t)
+        head.addStretch(1)
+        head.addWidget(self.chart_total)
+        chart_card.body.addLayout(head)
+        self.chart = PillChart()
+        chart_card.body.addWidget(self.chart, 1)
+        row.addWidget(chart_card, 3)
+
         self.latest = Card("Latest renewal month")
         head = QHBoxLayout()
         self.latest_label = QLabel("No months yet")
-        self.latest_label.setObjectName("BigNumber")
+        self.latest_label.setObjectName("Hero")
         self.latest_chip = chip("", "draft")
         head.addWidget(self.latest_label)
         head.addSpacing(8)
@@ -50,19 +65,19 @@ class DashboardPage(Page):
         self.latest.body.addLayout(head)
         self.latest_detail = muted("")
         self.latest.body.addWidget(self.latest_detail)
-        go = button("Open monthly renewals", "renew")
+        self.latest.body.addStretch(1)
+        go = button("Open monthly renewals", "arrow-up-right")
         go.clicked.connect(lambda: ctx.events.navigate.emit("renewals", None))
         self.latest.body.addWidget(go)
-        self.latest.body.addStretch(1)
-        row.addWidget(self.latest, 1)
+        row.addWidget(self.latest, 2)
+        self.root.addLayout(row, 3)
 
         activity = Card("Recent activity")
         self.activity = DataTable([
-            Column("When", "when", width=140), Column("By", "user", width=90), Column("What", "what", stretch=True),
+            Column("When", "when", width=150), Column("By", "user", width=110), Column("What", "what", stretch=True),
         ])
         activity.body.addWidget(self.activity)
-        row.addWidget(activity, 2)
-        self.root.addLayout(row, 1)
+        self.root.addWidget(activity, 2)
 
     def refresh(self) -> None:
         with self.ctx.db.session() as s:
@@ -70,6 +85,8 @@ class DashboardPage(Page):
             months = s.scalar(select(func.count(RenewalBatch.id))) or 0
             batches = renewals.list_batches(s)
             latest = batches[0] if batches else None
+            series = [(f"{renewals.month_name(b.request_month)[:3].title()} {str(b.request_year)[2:]}",
+                       renewals.totals(b)["loan_approved"]) for b in reversed(batches[:8])]
             if latest:
                 t = renewals.totals(latest)
                 count = len(latest.entries)
@@ -81,16 +98,18 @@ class DashboardPage(Page):
             ]
         self.cards["employees"].set_value(f"{active:,}")
         self.cards["months"].set_value(f"{months:,}")
+        self.chart.set_items(series)
+        self.chart_total.setText(f"{len(series)} month(s)")
+        self.chart_total.setVisible(bool(series))
         if latest:
             self.cards["approved"].set_value(format_money(t["loan_approved"]))
             self.cards["payable"].set_value(format_money(t["balance_payable"]))
             self.latest_label.setText(label)
-            from ..widgets.common import set_chip
             set_chip(self.latest_chip, status.title(), status)
             self.latest_chip.show()
             self.latest_detail.setText(
-                f"{count} employee(s) · existing balances {format_money(t['existing_loan_balance'])} · "
-                f"loan in hand {format_money(t['loan_in_hand'])}"
+                f"{count} employee(s)\nExisting balances {format_money(t['existing_loan_balance'])}\n"
+                f"Loan in hand {format_money(t['loan_in_hand'])}"
             )
         else:
             for key in ("approved", "payable"):

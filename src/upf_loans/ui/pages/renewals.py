@@ -19,6 +19,7 @@ from ..icons import icon
 from ..widgets.common import Banner, Card, button, chip, confirm, error, info, muted, set_chip
 from ..widgets.table import Column, DataTable
 from .base import Page
+from .. import theme
 
 
 class NewMonthDialog(QDialog):
@@ -69,7 +70,7 @@ class RenewalsPage(Page):
         right.setSpacing(12)
         head = QHBoxLayout()
         self.heading = QLabel("No month selected")
-        self.heading.setObjectName("BigNumber")
+        self.heading.setObjectName("Hero")
         self.status = chip("", "draft")
         head.addWidget(self.heading)
         head.addSpacing(10)
@@ -113,12 +114,12 @@ class RenewalsPage(Page):
             Column("Existing balance", "existing", "money", width=125),
             Column("Balance payable", "payable", "money", width=125),
             Column("Loan in hand", "in_hand", "money", width=115),
-            Column("Flag", "flag", stretch=True, color=lambda r: "#B7791F"),
+            Column("Flag", "flag", stretch=True, color=lambda r: theme.WARNING),
         ])
         self.table.activated_row.connect(lambda r: self._edit(r["employee_id"]))
         right.addWidget(self.table, 1)
 
-        totals = Card(shadow=False)
+        totals = Card()
         tl = QHBoxLayout()
         self.total_labels: dict[str, QLabel] = {}
         for key, label in (("count", "Employees"), ("loan_approved", "Loans approved"),
@@ -127,7 +128,7 @@ class RenewalsPage(Page):
             box = QVBoxLayout()
             box.setSpacing(0)
             v = QLabel("0")
-            v.setObjectName("StatValue")
+            v.setObjectName("TotalValue")
             c = QLabel(label)
             c.setObjectName("StatLabel")
             box.addWidget(v)
@@ -149,7 +150,7 @@ class RenewalsPage(Page):
         self.months.clear()
         for bid, label, status, count in items:
             it = QListWidgetItem(icon("lock" if status == "finalized" else "calendar",
-                                      "#1E8E5A" if status == "finalized" else "#2F6FED"),
+                                      theme.SUCCESS if status == "finalized" else theme.LIME),
                                  f"{label}\n{count} employee(s) · {status}")
             it.setData(Qt.ItemDataRole.UserRole, bid)
             self.months.addItem(it)

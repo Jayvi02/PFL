@@ -11,6 +11,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableView
 
 from ...core.money import format_money
+from .. import theme
 
 
 @dataclass
@@ -72,7 +73,7 @@ class RowModel(QAbstractTableModel):
                 if color:
                     return QColor(color)
             if col.kind == "money" and isinstance(value, Decimal) and value < 0:
-                return QColor("#C53030")
+                return QColor(theme.DANGER)
         if role == Qt.ItemDataRole.ToolTipRole:
             return row.get("_tooltip")
         return None

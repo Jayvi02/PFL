@@ -50,11 +50,10 @@ def main() -> int:
     app.setApplicationName(config.APP_NAME)
     app.setOrganizationName(config.APP_DIR_NAME)
     app.setFont(QFont("Segoe UI", 10))
-    from .ui.theme import STYLESHEET
+    from .ui import theme
     from .ui.icons import icon
-    app.setStyle("Fusion")
-    app.setStyleSheet(STYLESHEET)
-    app.setWindowIcon(icon("wallet", "#1F3A68", 32))
+    theme.apply(app)
+    app.setWindowIcon(icon("wallet", theme.LIME, 32))
 
     try:
         db_path = config.database_path()

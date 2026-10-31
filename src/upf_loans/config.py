@@ -12,7 +12,7 @@ from pathlib import Path
 
 APP_NAME = "UPF Loan Manager"
 APP_DIR_NAME = "UPFLoans"
-APP_VERSION = "0.1.0"
+APP_VERSION = "1.0"  # the GitHub build appends its run number, e.g. 1.0.42
 
 
 def data_dir() -> Path:

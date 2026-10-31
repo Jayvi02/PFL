@@ -11,6 +11,7 @@ data folder, not the program folder, so it is never touched.
 from __future__ import annotations
 
 import json
+import re
 import os
 import shutil
 import sys
@@ -38,10 +39,21 @@ class UpdateInfo:
     published_at: str
     asset_url: str
     size: int
+    latest_version: str = ""
 
 
 def current_build() -> str:
     return _build.BUILD_SHA
+
+
+def current_version() -> str:
+    """Version shown to the user: 1.0.<GitHub run number>, or "1.0 (dev)" when run from source."""
+    number = getattr(_build, "BUILD_NUMBER", 0)
+    return f"{config.APP_VERSION}.{number}" if number else f"{config.APP_VERSION} (dev)"
+
+
+def build_date() -> str:
+    return getattr(_build, "BUILD_DATE", "")
 
 
 def is_installed_build() -> bool:
@@ -84,7 +96,13 @@ def check(token: str = "", timeout: float = 10) -> UpdateInfo:
         published_at=str(data.get("published_at", "")),
         asset_url=str(asset["url"]),
         size=int(asset.get("size") or 0),
+        latest_version=_version_from_title(str(data.get("name") or "")),
     )
+
+
+def _version_from_title(title: str) -> str:
+    match = re.search(r"\d+\.\d+\.\d+", title)
+    return match.group(0) if match else ""
 
 
 def download(info: UpdateInfo, token: str = "", progress: Callable[[int, int], None] | None = None,

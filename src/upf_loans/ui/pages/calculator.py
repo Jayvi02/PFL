@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 
-from PySide6.QtCore import Qt
+import calendar
+
+from PySide6.QtCore import QRegularExpression, Qt
+from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtWidgets import (
-    QComboBox, QCompleter, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QScrollArea, QSpinBox,
+    QComboBox, QCompleter, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QScrollArea,
     QVBoxLayout, QWidget,
 )
 from sqlalchemy import select
@@ -15,7 +18,7 @@ from ...core.money import format_money
 from ...db.models import Employee, RenewalEntry
 from ...services import employees, renewals, settings
 from ...services.errors import ServiceError
-from ..widgets.common import Banner, Card, MoneyEdit, button, error, muted, section
+from ..widgets.common import Banner, Card, MoneyEdit, button, error, muted, section, set_flag, set_role
 from .base import Page
 
 INPUT_GROUPS = [
@@ -86,23 +89,25 @@ class CalculatorPage(Page):
                 grid.addWidget(edit, (i // 2) * 2 + 1, i % 2)
             card.body.addLayout(grid)
         card.body.addWidget(section("Last loan"))
-        last = QHBoxLayout()
-        self.last_month = QSpinBox()
-        self.last_month.setRange(0, 12)
-        self.last_month.setSpecialValueText("–")
-        self.last_year = QSpinBox()
-        self.last_year.setRange(1999, 2100)
-        self.last_year.setSpecialValueText("–")
-        for spin in (self.last_month, self.last_year):
-            spin.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
-            spin.setFixedWidth(80)
-        last.addWidget(QLabel("Month"))
-        last.addWidget(self.last_month)
-        last.addSpacing(12)
-        last.addWidget(QLabel("Year"))
-        last.addWidget(self.last_year)
-        last.addStretch(1)
+        last = QGridLayout()
+        last.setHorizontalSpacing(14)
+        last.setVerticalSpacing(6)
+        self.last_month = QComboBox()
+        self.last_month.addItem("None", 0)
+        for m in range(1, 13):
+            self.last_month.addItem(f"{m:02d} · {calendar.month_name[m]}", m)
+        self.last_year = QLineEdit()
+        self.last_year.setPlaceholderText("YYYY")
+        self.last_year.setMaxLength(4)
+        self.last_year.setValidator(QRegularExpressionValidator(QRegularExpression(r"^\d{0,4}$"), self))
+        for i, (text, widget) in enumerate((("Last loan month", self.last_month), ("Last loan year", self.last_year))):
+            lbl = QLabel(text)
+            lbl.setObjectName("Muted")
+            last.addWidget(lbl, 0, i)
+            last.addWidget(widget, 1, i)
         card.body.addLayout(last)
+        card.body.addWidget(muted("Filled in from the last finalized month when there is one; you can type or "
+                                  "change it here. Leave both empty if the employee has no previous loan."))
         il.addWidget(card)
         il.addStretch(1)
         scroll.setWidget(inner)
@@ -260,11 +265,19 @@ class CalculatorPage(Page):
         self._loading = True
         for key, edit in self.inputs.items():
             edit.set_value(values.get(key) if values else None)
-        self.last_month.setValue(last[0] or 0)
-        self.last_year.setValue(last[1] or 1999)
+        self._set_last_loan(*last)
         self._loading = False
         self._status_note = status
         self._recalc()
+
+    def _set_last_loan(self, month: int | None, year: int | None) -> None:
+        self.last_month.setCurrentIndex(max(0, self.last_month.findData(month or 0)))
+        self.last_year.setText(str(year) if year else "")
+
+    def _last_loan(self) -> tuple[int | None, int | None]:
+        month = self.last_month.currentData() or None
+        text = self.last_year.text().strip()
+        return month, (int(text) if text else None)
 
     def _inputs(self) -> LoanInputs:
         return LoanInputs(**{k: e.value() for k, e in self.inputs.items()})
@@ -277,7 +290,7 @@ class CalculatorPage(Page):
         for key in ("loan_approved", "balance_payable", "instalment", "loan_in_hand"):
             value = getattr(r, key)
             self.big[key].setText(format_money(value))
-            self.big[key].setStyleSheet("color:#C53030;" if value < 0 else "")
+            set_flag(self.big[key], "negative", value < 0)
         values = {**{k: getattr(r, k) for k in self.step_labels if hasattr(r, k)},
                   "other_loans": inputs.other_loans_total}
         for key, lbl in self.step_labels.items():
@@ -285,10 +298,10 @@ class CalculatorPage(Page):
             neg = key in ("q_deduction", "other_loans")
             lbl.setText(("− " if neg and v else "") + format_money(v))
         bold = {"lowest_cap", "loan_approved", "balance_payable", "loan_in_hand"}
-        for key in bold:
-            self.step_labels[key].setStyleSheet("font-weight:600;")
-        self.step_labels[{"salary": "salary_cap", "salary_balance": "salary_balance_cap",
-                          "pf_balance": "pf_balance_cap"}[r.limiting_cap]].setStyleSheet("color:#2F6FED;font-weight:600;")
+        limiting = {"salary": "salary_cap", "salary_balance": "salary_balance_cap",
+                    "pf_balance": "pf_balance_cap"}[r.limiting_cap]
+        for key, lbl in self.step_labels.items():
+            set_role(lbl, "Highlight" if key == limiting else ("Strong" if key in bold else "Amount"))
         msgs = list(r.warnings)
         note = getattr(self, "_status_note", "")
         if any(e.value() for e in self.inputs.values()):
@@ -303,8 +316,7 @@ class CalculatorPage(Page):
         self._loading = True
         for e in self.inputs.values():
             e.clear()
-        self.last_month.setValue(0)
-        self.last_year.setValue(1999)
+        self._set_last_loan(None, None)
         self.employee.setCurrentIndex(-1)
         self.employee.setEditText("")
         self._loading = False
@@ -321,10 +333,12 @@ class CalculatorPage(Page):
             error(self, "Choose the renewal month to save into, or create one on the Monthly Renewals page.",
                   "No renewal month")
             return
-        month = self.last_month.value() or None
-        year = self.last_year.value() if self.last_year.value() > 1999 else None
+        month, year = self._last_loan()
         if (month is None) != (year is None):
             error(self, "Enter both the last loan month and year, or neither.", "Last loan")
+            return
+        if year is not None and not 1990 <= year <= 2100:
+            error(self, "The last loan year should be four digits, for example 2024.", "Last loan")
             return
         try:
             with self.ctx.db.session() as s:

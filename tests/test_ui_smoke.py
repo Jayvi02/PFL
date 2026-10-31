@@ -36,3 +36,23 @@ def test_main_window_pages(qtbot, db, admin):
     calc.inputs["vehicle_loan"].setText("30000")
     calc.inputs["vehicle_loan"].value_changed.emit()
     assert calc.big["loan_in_hand"].text() == "782,930.00"
+    # last loan month and year load from the saved row and can be typed in
+    assert calc._last_loan() == (10, 2023)
+    calc.last_month.setCurrentIndex(calc.last_month.findData(3))
+    calc.last_year.setText("2025")
+    calc._save()
+    with db.session() as s:
+        entry = renewals.get_batch(s, batch_id).entries[0]
+        assert (entry.last_loan_month, entry.last_loan_year) == (3, 2025)
+    calc._set_last_loan(None, None)
+    assert calc._last_loan() == (None, None)
+
+
+def test_theme_palette_keeps_dropdown_text_readable(qtbot):
+    from PySide6.QtGui import QPalette
+    from upf_loans.ui import theme
+
+    p = theme.palette()
+    assert p.color(QPalette.ColorRole.Base).lightness() < 80
+    assert p.color(QPalette.ColorRole.Text).lightness() > 200
+    assert "QComboBox QAbstractItemView" in theme.STYLESHEET

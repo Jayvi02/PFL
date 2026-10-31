@@ -13,6 +13,7 @@ from ..db.session import Database
 class Events(QObject):
     data_changed = Signal(str)  # area: "employees", "renewals", "settings", ...
     navigate = Signal(str, object)  # page key, optional argument
+    update_found = Signal(object)  # updater.UpdateInfo when GitHub has a newer build
 
 
 def current_operator() -> str:
