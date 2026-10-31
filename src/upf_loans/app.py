@@ -6,7 +6,6 @@ import logging
 import sys
 import traceback
 
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from . import config
@@ -49,7 +48,6 @@ def main() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName(config.APP_NAME)
     app.setOrganizationName(config.APP_DIR_NAME)
-    app.setFont(QFont("Segoe UI", 10))
     from .ui import theme
     from .ui.icons import icon
     theme.apply(app)

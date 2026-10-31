@@ -6,7 +6,7 @@ layered translucent fills, light top-edge borders and the painted backdrop in
 separate windows, so they get solid colours to stay readable.
 """
 
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtGui import QColor, QFont, QPalette
 
 # Base colours
 BG = "#0D0F14"
@@ -38,8 +38,10 @@ GLASS_EDGE = "rgba(255,255,255,0.18)"
 LINE = "rgba(255,255,255,0.07)"
 
 MONO = '"Cascadia Mono", "JetBrains Mono", "SF Mono", Consolas, "DejaVu Sans Mono", monospace'
-SANS = '"Segoe UI Variable Text", "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif'
-DISPLAY = '"Segoe UI Variable Display", "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif'
+# Source Serif 4 is bundled (assets/fonts, SIL Open Font License) for the calm, bookish reading feel.
+SERIF = '"Source Serif 4", Georgia, "Times New Roman", serif'
+SANS = SERIF
+DISPLAY = SERIF
 
 # Kept for code that colours single values (negative amounts, highlighted caps).
 NEGATIVE = DANGER
@@ -50,7 +52,7 @@ _CHIP = "border-radius: 10px; padding: 3px 11px; font-weight: 600; font-size: 8.
 STYLESHEET = f"""
 * {{
     font-family: {SANS};
-    font-size: 10pt;
+    font-size: 10.5pt;
     color: {TEXT};
     outline: 0;
 }}
@@ -75,7 +77,11 @@ QToolTip {{ background: {BG_POPUP}; color: {TEXT}; border: 1px solid {GLASS_EDGE
     padding: 10px 14px; border-radius: 16px; font-size: 10pt;
 }}
 #Sidebar QPushButton:hover {{ background: {GLASS_HI}; color: {TEXT}; }}
-#Sidebar QPushButton:checked {{ background: {LIME}; color: {ON_LIME}; font-weight: 700; }}
+#Sidebar QPushButton:checked, #Sidebar QPushButton:checked:hover {{ background: transparent; color: {ON_LIME}; font-weight: 700; }}
+#Sidebar QFrame#NavIndicator {{
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {LIME_HOVER}, stop:1 {LIME});
+    border: 1px solid rgba(255,255,255,0.35); border-radius: 16px;
+}}
 #Sidebar QLabel#Version {{ color: {MUTED}; font-family: {MONO}; font-size: 8pt; }}
 #Sidebar QLabel#VersionDate {{ color: {FAINT}; font-size: 8pt; }}
 #Sidebar QFrame#VersionBox {{ background: rgba(0,0,0,0.22); border: 1px solid {LINE}; border-radius: 14px; }}
@@ -276,5 +282,9 @@ def apply(app) -> None:
 
     resources.register()
     app.setStyle("Fusion")
+    font = QFont("Source Serif 4")
+    font.setStyleHint(QFont.StyleHint.Serif)
+    font.setPointSizeF(10.5)
+    app.setFont(font)
     app.setPalette(palette())
     app.setStyleSheet(STYLESHEET)

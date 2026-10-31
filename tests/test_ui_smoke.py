@@ -56,3 +56,28 @@ def test_theme_palette_keeps_dropdown_text_readable(qtbot):
     assert p.color(QPalette.ColorRole.Base).lightness() < 80
     assert p.color(QPalette.ColorRole.Text).lightness() > 200
     assert "QComboBox QAbstractItemView" in theme.STYLESHEET
+
+
+def test_animations_finish_in_a_plain_state(qtbot):
+    from PySide6.QtWidgets import QLabel, QWidget
+    from upf_loans.ui import animation
+
+    label = QLabel("–")
+    qtbot.addWidget(label)
+    animation.count_to(label, "11,766,720.00", duration=50)
+    qtbot.waitUntil(lambda: label.text() == "11,766,720.00", timeout=2000)
+    animation.count_to(label, "Draft")
+    assert label.text() == "Draft"
+
+    page = QWidget()
+    qtbot.addWidget(page)
+    page.show()
+    animation.fade_in(page, duration=50)
+    assert page.graphicsEffect() is not None
+    qtbot.waitUntil(lambda: page.graphicsEffect() is None, timeout=2000)
+
+
+def test_bundled_serif_font_loads(qtbot):
+    from upf_loans.ui import resources
+
+    assert any("Source Serif 4" in f for f in resources.register_fonts())

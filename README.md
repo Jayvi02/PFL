@@ -2,7 +2,7 @@
 
 An offline Windows desktop app that replaces the `PF LOAN Calculation.xlsx` workbook for University Provident Fund loan renewals. You keep employee records, work out each person's loan with the workbook's formulas, build the monthly renewal list, and export it for UGC as the fixed-width text file and the printed sheet.
 
-Built with Python 3.12, PySide6 (Qt), SQLite, SQLAlchemy and Alembic, openpyxl, ReportLab and pytest, and packaged with PyInstaller. There is no login: the app opens straight to the dashboard, and the audit log records the Windows account name.
+The interface uses the bundled Source Serif 4 font (SIL Open Font License, `src/upf_loans/assets/fonts/OFL.txt`). Built with Python 3.12, PySide6 (Qt), SQLite, SQLAlchemy and Alembic, openpyxl, ReportLab and pytest, and packaged with PyInstaller. There is no login: the app opens straight to the dashboard, and the audit log records the Windows account name.
 
 ## Run it from source
 

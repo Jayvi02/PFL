@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtCore import QEvent, QSize, Qt, QTimer
 from PySide6.QtWidgets import (
     QButtonGroup, QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QStackedWidget,
     QVBoxLayout,
@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 
 from ..config import APP_NAME
 from ..services import updater
-from . import background, theme
+from . import animation, background, theme
 from .context import AppContext
 from .icons import icon, toggle_icon
 from .pages.calculator import CalculatorPage
@@ -78,6 +78,11 @@ class MainWindow(QMainWindow):
         brand_row.addLayout(brand_text, 1)
         sl.addLayout(brand_row)
         sl.addSpacing(26)
+        self.side = side
+        self.nav_indicator = QFrame(side)
+        self.nav_indicator.setObjectName("NavIndicator")
+        self.nav_indicator.hide()
+        side.installEventFilter(self)
 
         self.stack = QStackedWidget()
         self.stack.setObjectName("Workspace")
@@ -108,7 +113,7 @@ class MainWindow(QMainWindow):
         line1, line2 = version_text()
         self.version_label = QLabel(line1)
         self.version_label.setObjectName("Version")
-        self.version_date = QLabel(f"{line2} · works offline")
+        self.version_date = QLabel(line2)
         self.version_date.setObjectName("VersionDate")
         vl.addWidget(self.version_label)
         vl.addWidget(self.version_date)
@@ -150,7 +155,7 @@ class MainWindow(QMainWindow):
         hl.addWidget(today)
         self.search = QLineEdit()
         self.search.setObjectName("GlobalSearch")
-        self.search.setPlaceholderText("Find employee by name, PF number or NIC")
+        self.search.setPlaceholderText("Find employee: name, PF no. or NIC")
         self.search.addAction(icon("search", theme.MUTED), QLineEdit.ActionPosition.LeadingPosition)
         self.search.returnPressed.connect(self._global_search)
         hl.addWidget(self.search)
@@ -172,12 +177,33 @@ class MainWindow(QMainWindow):
                 self.ctx.events.update_found.emit(info)
         background.run(updater.check, done, lambda _msg: None)
 
+    def eventFilter(self, obj, event):  # noqa: N802 (Qt API)
+        if obj is self.side and event.type() in (QEvent.Type.Resize, QEvent.Type.Show):
+            QTimer.singleShot(0, lambda: self._move_indicator(animate=False))
+        return super().eventFilter(obj, event)
+
+    def _move_indicator(self, animate: bool = True) -> None:
+        btn = next((b for b in self.nav_buttons.values() if b.isChecked()), None)
+        if btn is None or not btn.geometry().isValid():
+            return
+        target = btn.geometry()
+        self.nav_indicator.lower()
+        if animate and self.nav_indicator.isVisible():
+            animation.slide_to(self.nav_indicator, target)
+        else:
+            self.nav_indicator.setGeometry(target)
+            self.nav_indicator.show()
+
     def show_page(self, key: str, arg=None) -> None:
         page = self.pages[key]
+        changed = self.stack.currentWidget() is not page
         self.nav_buttons[key].setChecked(True)
+        self._move_indicator()
         self.page_title.setText(page.title)
         self.page_sub.setText(page.subtitle)
         self.stack.setCurrentWidget(page)
+        if changed and self.isVisible():
+            animation.fade_in(page)
         if arg is not None:
             page.open_with(arg)
 
