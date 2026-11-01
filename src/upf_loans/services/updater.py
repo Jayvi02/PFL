@@ -107,7 +107,7 @@ def _version_from_title(title: str) -> str:
 
 def download(info: UpdateInfo, token: str = "", progress: Callable[[int, int], None] | None = None,
              target_dir: Path | None = None) -> Path:
-    target_dir = target_dir or (config.data_dir() / "update")
+    target_dir = target_dir or (config.home_dir() / "update")
     if target_dir.exists():
         shutil.rmtree(target_dir, ignore_errors=True)
     target_dir.mkdir(parents=True)
@@ -189,7 +189,7 @@ def can_write(folder: Path) -> bool:
 
 
 def last_failure() -> str | None:
-    failed = config.data_dir() / "update" / "FAILED.txt"
+    failed = config.home_dir() / "update" / "FAILED.txt"
     if failed.exists():
         text = failed.read_text(errors="replace").strip()
         try:

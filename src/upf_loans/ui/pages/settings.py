@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from ... import config
-from ...services import audit, backup, settings
+from ...services import audit, backup, location, settings
 from ...services.errors import ServiceError
 from ..widgets.common import Card, button, confirm, error, info, muted
 from ..widgets.table import Column, DataTable
@@ -116,9 +116,14 @@ class SettingsPage(Page):
         w = QWidget()
         lay = QVBoxLayout(w)
         card = Card("Database")
-        card.body.addWidget(muted(f"Database file: {config.database_path()}\nBackups folder: {config.backup_dir()}\n"
-                                  "An automatic backup is made the first time the app starts each day; the last 30 are kept."))
+        card.body.addWidget(muted(f"Data folder: {config.data_dir()}\nDatabase file: {config.database_path()}\n"
+                                  f"Backups folder: {config.backup_dir()}\n"
+                                  "Everything is stored on this computer. An automatic backup is made the first time "
+                                  "the app starts each day; the last 30 are kept."))
         row = QHBoxLayout()
+        move = button("Move data folder…", "database")
+        move.setToolTip("Move the database and backups to another folder, e.g. D:\\UPFLoans or a backed-up drive")
+        move.clicked.connect(self._move_data)
         b1 = button("Back up now", "database", "primary")
         b1.clicked.connect(self._backup_now)
         b2 = button("Open backups folder", "file")
@@ -127,6 +132,7 @@ class SettingsPage(Page):
         self.restore_btn.clicked.connect(self._restore)
         row.addWidget(b1)
         row.addWidget(b2)
+        row.addWidget(move)
         row.addStretch(1)
         row.addWidget(self.restore_btn)
         card.body.addLayout(row)
@@ -201,6 +207,26 @@ class SettingsPage(Page):
             os.startfile(folder)  # type: ignore[attr-defined]
         else:
             subprocess.Popen(["xdg-open" if sys.platform != "darwin" else "open", folder])
+
+    def _move_data(self) -> None:
+        folder = QFileDialog.getExistingDirectory(self, "Choose the new data folder", str(config.data_dir()))
+        if not folder:
+            return
+        target = Path(folder)
+        if not confirm(self, "Move data folder", f"Copy the database and backups to\n{target}\nand use that folder "
+                       "from now on?\n\nThe app will close; start it again afterwards. The old copy is kept where it "
+                       "is as a fallback.", "Move and close"):
+            return
+        try:
+            with self.ctx.db.session() as s:
+                audit.record(s, self.ctx.operator, "data.move", summary=f"{config.data_dir()} -> {target}")
+            self.ctx.db.dispose()
+            location.move_data(target)
+        except (OSError, ServiceError) as exc:
+            error(self, f"The data folder was not moved: {exc}")
+            return
+        info(self, f"The data now lives in {target}. The app will now close; start it again.")
+        QApplication.quit()
 
     def _restore(self) -> None:
         row = self.backups.selected()

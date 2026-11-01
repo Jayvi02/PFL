@@ -1,3 +1,4 @@
+from datetime import date
 import re
 from decimal import Decimal as D
 
@@ -102,7 +103,8 @@ def test_exports(db, admin, tmp_path):
         txt = exports.export_ugc_text(s, admin, b.id, tmp_path / "out.txt")
         lines = txt.read_bytes().decode("cp1252").split("\r\n")
         # Same as Excel's "Text (Tab delimited)" save of the PF LOAN send UGC sheet
-        assert lines[0] == "\tRENEWAL OF U.P.F. LOAN - APPLICATION FOR THE MONTH OF  NOVEMBER"
+        this_month = renewals.month_name(date.today().month)
+        assert lines[0] == f"\tRENEWAL OF U.P.F. LOAN - APPLICATION FOR THE MONTH OF  {this_month}"
         assert lines[1] == "\tUNIVERSITY OF RUHUNA"
         assert lines[2].split("\t") == ["", "NAME", "PF-NUMBER", "ID-NUMBER", "LOAN REQUEST MONTH",
                                         "LOAN REQUEST YEAR", "LAST LOAN MONTH", "LAST LOAN YEAR", "LOAN APPROVED",
@@ -118,7 +120,7 @@ def test_exports(db, admin, tmp_path):
         assert lines[11] == "" and len(lines) == 12
         xlsx = exports.export_ugc_excel(s, admin, b.id, tmp_path / "ugc.xlsx")
         ws = load_workbook(xlsx).active
-        assert ws["B1"].value.endswith("NOVEMBER")
+        assert ws["B1"].value.endswith(this_month)
         assert ws["C4"].value == "R 001365" and ws["I4"].number_format == "000000000000.00"
         assert ws["I6"].value == "=SUM(I4:I5)"
         assert ws["B9"].value.strip() == "BURSAR"
@@ -188,3 +190,36 @@ def test_backup_and_restore(db, admin, tmp_path):
     bad.write_text("nope")
     with pytest.raises(ServiceError):
         backup.validate_backup(bad)
+
+
+def test_move_data_folder(tmp_path, monkeypatch, admin):
+    from upf_loans import config
+    from upf_loans.db.session import Database
+    from upf_loans.services import location
+
+    monkeypatch.setenv("UPF_LOANS_HOME", str(tmp_path / "home"))
+    db = Database(config.database_path())
+    with db.session() as s:
+        add_employee(s, admin)
+    backup.create_backup(config.database_path(), config.backup_dir())
+    db.dispose()
+
+    target = tmp_path / "D" / "UPFLoans"
+    location.move_data(target)
+    assert config.data_dir() == target.resolve()
+    assert config.database_path() == target.resolve() / "upf_loans.sqlite3"
+    assert len(backup.list_backups(config.backup_dir())) == 1
+    db2 = Database(config.database_path())
+    with db2.session() as s:
+        assert len(employees.search(s)) == 1
+    db2.dispose()
+    with pytest.raises(ServiceError, match="already"):
+        location.move_data(target)
+
+    # a missing drive gives a clear error instead of silently starting empty
+    config.set_data_dir(tmp_path / "file.txt" / "x")
+    (tmp_path / "file.txt").write_text("not a folder")
+    with pytest.raises(config.DataLocationError):
+        config.data_dir()
+    config.set_data_dir(None)
+    assert config.data_dir() == config.home_dir()

@@ -24,7 +24,7 @@ Each GitHub build is numbered `1.0.<build number>`. The number is shown at the b
 
 To build it yourself instead, run `packaging\build_windows.bat`. It runs the tests, builds `dist\UPFLoanManager\UPFLoanManager.exe`, then runs the exe's `--self-test` check. Copy the whole `dist\UPFLoanManager` folder to the office PC. Nothing needs to be installed there.
 
-Your data is kept in `%LOCALAPPDATA%\UPFLoans`, not in the program folder:
+Your data is kept on the computer that runs the app, in `%LOCALAPPDATA%\UPFLoans` by default, never in the program folder. **Settings → Backup & restore → Move data folder…** copies it to another folder (for example `D:\UPFLoans` or a drive that IT backs up) and uses that from then on; the choice is remembered in `%LOCALAPPDATA%\UPFLoans\data-location.txt`. The data folder holds:
 
 - the database: `upf_loans.sqlite3`
 - daily automatic backups (the last 30 are kept): `backups\`
@@ -57,7 +57,7 @@ These are the formulas from the workbook's MAIN sheet, applied column by column.
 
 The text file is the "PF LOAN send UGC" sheet saved the way Excel's **Text (Tab delimited)** option saves it, which is what UGC has been receiving. Fields are separated by tabs:
 
-1. the title (`RENEWAL OF U.P.F. LOAN - APPLICATION FOR THE MONTH OF  …`) and the university name
+1. the title (`RENEWAL OF U.P.F. LOAN - APPLICATION FOR THE MONTH OF  …`, with the month the file is exported) and the university name
 2. the column headings
 3. one row per employee: serial number, name, PF number, NIC, request month and year, last loan month and year, the three amounts as `000000000000.00`, and the university code
 4. the totals row, two blank lines, then the signatory, the university name and the letter date

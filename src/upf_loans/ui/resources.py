@@ -19,7 +19,7 @@ _FILES = {
 
 
 def register() -> None:
-    folder = config.data_dir() / "theme"
+    folder = config.home_dir() / "theme"
     folder.mkdir(parents=True, exist_ok=True)
     for name, svg in _FILES.items():
         path = folder / name

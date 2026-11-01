@@ -15,7 +15,7 @@ from .services import backup, settings
 
 def _setup_logging() -> None:
     logging.basicConfig(
-        filename=config.data_dir() / "upf_loans.log", level=logging.INFO,
+        filename=config.home_dir() / "upf_loans.log", level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
@@ -23,7 +23,7 @@ def _setup_logging() -> None:
 def _excepthook(exc_type, exc, tb) -> None:
     logging.error("Unhandled error", exc_info=(exc_type, exc, tb))
     QMessageBox.critical(None, "Unexpected error",
-                         f"{exc}\n\nDetails were written to {config.data_dir() / 'upf_loans.log'}.")
+                         f"{exc}\n\nDetails were written to {config.home_dir() / 'upf_loans.log'}.")
 
 
 def self_test() -> int:
@@ -63,6 +63,10 @@ def main() -> int:
         with db.session() as s:
             keep = int(settings.get(s, "backup_keep") or 30)
         backup.prune(config.backup_dir(), keep)
+    except config.DataLocationError as exc:
+        logging.error("Data folder unavailable: %s", exc)
+        QMessageBox.critical(None, config.APP_NAME, str(exc))
+        return 1
     except Exception as exc:  # noqa: BLE001
         logging.exception("Could not open database")
         QMessageBox.critical(None, config.APP_NAME, f"The database could not be opened:\n{exc}\n\n{traceback.format_exc(limit=2)}")
