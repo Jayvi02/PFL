@@ -22,7 +22,7 @@ from .pages.renewals import RenewalsPage
 from .pages.reports import ReportsPage
 from .pages.settings import SettingsPage
 from .widgets.backdrop import Backdrop
-from .widgets.common import button
+from .widgets.common import button, error
 
 NAV = [
     ("dashboard", "Dashboard", "dashboard", DashboardPage),
@@ -168,7 +168,16 @@ class MainWindow(QMainWindow):
         ctx.events.update_found.connect(lambda _info: self.update_btn.show())
         self.show_page("dashboard")
         if updater.is_installed_build():
+            QTimer.singleShot(800, self._report_previous_update)
             QTimer.singleShot(3000, self._quiet_update_check)
+
+    def _report_previous_update(self) -> None:
+        try:
+            problem = updater.check_previous_install()
+        except OSError:
+            problem = None
+        if problem:
+            error(self, problem, "Update not installed")
 
     def _quiet_update_check(self) -> None:
         """Check GitHub once at start-up; stay silent when offline."""

@@ -119,7 +119,7 @@ class UpdatesPanel(QWidget):
         def work(progress):
             zip_path = updater.download(info, progress=progress)
             new_dir = updater.unpack(zip_path)
-            return updater.write_install_script(new_dir, target, updater.pid())
+            return updater.write_install_script(new_dir, target, updater.pid(), info.latest)
 
         background.run(work, self._downloaded, self._failed, self._progress)
 
