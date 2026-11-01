@@ -111,10 +111,18 @@ class CalculatorPage(Page):
         il.addWidget(card)
         il.addStretch(1)
         scroll.setWidget(inner)
-        body.addWidget(scroll, 3)
+        body.addWidget(scroll, 5)
 
-        # --- results
-        right = QVBoxLayout()
+        # --- results (scrolls on small screens so rows are never squashed)
+        right_outer = QVBoxLayout()
+        right_outer.setSpacing(12)
+        right_scroll = QScrollArea()
+        right_scroll.setWidgetResizable(True)
+        right_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        right_inner = QWidget()
+        right_inner.setObjectName("Workspace")
+        right = QVBoxLayout(right_inner)
+        right.setContentsMargins(0, 0, 6, 0)
         right.setSpacing(14)
         res = Card("Result")
         big = QGridLayout()
@@ -124,7 +132,7 @@ class CalculatorPage(Page):
             box = QVBoxLayout()
             box.setSpacing(0)
             val = QLabel("0.00")
-            val.setObjectName("BigNumber" if i < 2 else "StatValue")
+            val.setObjectName("ResultNumber" if i < 2 else "TotalValue")
             cap = QLabel(label)
             cap.setObjectName("StatLabel")
             box.addWidget(val)
@@ -138,7 +146,8 @@ class CalculatorPage(Page):
 
         steps = Card("How it was calculated")
         self.steps = QFormLayout()
-        self.steps.setVerticalSpacing(6)
+        self.steps.setVerticalSpacing(8)
+        self.steps.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         self.step_labels: dict[str, QLabel] = {}
         for key in ("total_pf_balance", "existing_loan_balance", "salary_cap", "salary_balance_cap", "pf_balance_cap",
                     "lowest_cap", "q_deduction", "loan_ability", "instalment", "loan_approved", "balance_payable",
@@ -154,6 +163,8 @@ class CalculatorPage(Page):
         steps.body.addWidget(self.rule_note)
         right.addWidget(steps)
         right.addStretch(1)
+        right_scroll.setWidget(right_inner)
+        right_outer.addWidget(right_scroll, 1)
 
         actions = QHBoxLayout()
         clear = button("Clear")
@@ -163,8 +174,8 @@ class CalculatorPage(Page):
         actions.addStretch(1)
         actions.addWidget(clear)
         actions.addWidget(self.save_btn)
-        right.addLayout(actions)
-        body.addLayout(right, 2)
+        right_outer.addLayout(actions)
+        body.addLayout(right_outer, 4)
         self.root.addLayout(body, 1)
 
     # ----- data

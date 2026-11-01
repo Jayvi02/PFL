@@ -1,6 +1,6 @@
 # UPF Loan Manager
 
-An offline Windows desktop app that replaces the `PF LOAN Calculation.xlsx` workbook for University Provident Fund loan renewals. You keep employee records, work out each person's loan with the workbook's formulas, build the monthly renewal list, and export it for UGC as the fixed-width text file and the printed sheet.
+An offline Windows desktop app that replaces the `PF LOAN Calculation.xlsx` workbook for University Provident Fund loan renewals. You keep employee records, work out each person's loan with the workbook's formulas, build the monthly renewal list, and export it for UGC as the text file and the printed sheet.
 
 Built with Python 3.12, PySide6 (Qt), SQLite, SQLAlchemy and Alembic, openpyxl, ReportLab and pytest, and packaged with PyInstaller. There is no login: the app opens straight to the dashboard, and the audit log records the Windows account name.
 
@@ -55,25 +55,20 @@ These are the formulas from the workbook's MAIN sheet, applied column by column.
 
 ## The UGC text file
 
-Every line is exactly 127 characters, using the field widths from the "new format2007" sheet:
+The text file is the "PF LOAN send UGC" sheet saved the way Excel's **Text (Tab delimited)** option saves it, which is what UGC has been receiving. Fields are separated by tabs:
 
-| Field | Width | Format |
-| --- | --- | --- |
-| Name | 50 | left-aligned, padded with spaces |
-| PF number | 8 | left-aligned |
-| NIC | 10 | left-aligned |
-| Request month / year | 2 / 4 | month zero-padded |
-| Last loan month / year | 2 / 4 | month zero-padded; left blank if there is none |
-| Loan approved, existing balance, balance payable | 15 each | `000000000000.00` |
-| University code | 2 | right-aligned, e.g. ` F` |
+1. the title (`RENEWAL OF U.P.F. LOAN - APPLICATION FOR THE MONTH OF  …`) and the university name
+2. the column headings
+3. one row per employee: serial number, name, PF number, NIC, request month and year, last loan month and year, the three amounts as `000000000000.00`, and the university code
+4. the totals row, two blank lines, then the signatory, the university name and the letter date
 
-Lines end in Windows CRLF by default; you can change this in Settings. NICs are always the 10-character format (9 digits followed by V or X); the app rejects any other format when you save an employee. If any row doesn't fit the file layout, no file is written and the screen lists every row that needs fixing.
+Every row must also fit the UGC field limits from the "new format2007" sheet: name up to 50 characters, PF number up to 8, NIC exactly 10 (9 digits followed by V or X), and amounts that are not negative. If any row breaks a limit, no file is written and the screen lists every row that needs fixing. Lines end in Windows CRLF by default; you can change this in Settings.
 
 ## Project layout
 
 ```
 src/upf_loans/
-  core/       calculation, fixed-width format, money and validation (no database or UI)
+  core/       calculation, UGC text format, money and validation (no database or UI)
   db/         SQLAlchemy models, session and Alembic migrations
   services/   employees, renewals, settings, audit log, backup, import, exports
   reports/    UGC Excel sheet, calculation workbook, employee list, PDF

@@ -6,10 +6,10 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from ..core.ugc_text import build_file
+from ..core.ugc_text import build_file, build_sheet_text
 from ..reports.calculation_excel import write_calculation_workbook
 from ..reports.pdf import write_batch_pdf
-from ..reports.ugc_excel import write_ugc_workbook
+from ..reports.ugc_excel import title_text, write_ugc_workbook
 from . import audit, renewals, settings
 from .errors import ServiceError
 
@@ -25,10 +25,12 @@ def export_ugc_text(session: Session, actor: str, batch_id: int, path: Path) -> 
     if not batch.entries:
         raise ServiceError("This month has no employees.")
     ending = "\r\n" if settings.get(session, "text_line_ending") == "CRLF" else "\n"
-    text, errors = build_file(renewals.ugc_rows(session, batch), ending)
+    s = settings.get_all(session)
+    text, errors = build_sheet_text(renewals.ugc_rows(session, batch), title_text(batch.request_month),
+                                    s["university_name"], s["signatory_title"], batch.letter_date, ending)
     if errors:
         raise ServiceError("The UGC text file was not created:\n" + "\n".join(errors))
-    Path(path).write_bytes(text.encode("ascii"))
+    Path(path).write_bytes(text.encode("cp1252"))
     audit.record(session, actor, "export.ugc_text", "batch", batch.id,
                  f"{renewals.batch_label(batch)} -> {Path(path).name}")
     return Path(path)

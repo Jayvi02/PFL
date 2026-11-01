@@ -12,7 +12,7 @@ from .renewals import export_file
 
 EXPORTS = [
     ("text", "UGC text file", "file",
-     "Fixed-width file for UGC: one 127-character line per employee, in the new-format field widths."),
+     "The PF LOAN send UGC sheet as a tab-delimited text file: headings, every employee, totals and signature, as Excel saves it."),
     ("excel", "UGC renewal sheet", "report",
      "The “PF LOAN send UGC” sheet: title, 12 columns, totals and the Bursar signature block, landscape A4."),
     ("calc", "Calculation sheet", "calculator",
