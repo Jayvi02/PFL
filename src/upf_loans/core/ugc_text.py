@@ -1,4 +1,13 @@
-"""Fixed-width UGC renewal text file.
+"""UGC renewal text file.
+
+The file UGC receives is the "PF LOAN send UGC" sheet saved from Excel as
+"Text (Tab delimited)": title, university, column headings, one row per
+employee (with its serial number), the totals row, then the signature block.
+``build_sheet_text`` writes exactly that.
+
+Each row's values must also fit the field limits of the "new format2007"
+sheet (below); ``format_row`` checks them, and the export is blocked while
+any row fails.
 
 Field widths come from the width mask in row 4 of the "new format2007" sheet:
 
@@ -14,8 +23,6 @@ Field widths come from the width mask in row 4 of the "new format2007" sheet:
     BALANCE PAYABLE       15  444444444444444
     UNIVERSITY CODE        2  " R"
 
-One line per employee, 127 characters. The serial number and the totals row of
-the printed sheet are not part of the 2007 layout and are not written.
 """
 
 from __future__ import annotations
@@ -135,4 +142,45 @@ def build_file(rows: list[UgcRow], line_ending: str = "\r\n") -> tuple[str, list
             errors.append(str(exc))
     if errors:
         return "", errors
+    return "".join(line + line_ending for line in lines), []
+
+
+SHEET_HEADERS = (
+    "", "NAME", "PF-NUMBER", "ID-NUMBER", "LOAN REQUEST MONTH", "LOAN REQUEST YEAR", "LAST LOAN MONTH",
+    "LAST LOAN YEAR", "LOAN APPROVED", "EXISTING LOAN BALANCE", "BALANCE  PAYABLE", "UNIVERSITY CODE",
+)
+
+
+def _sheet_amount(value: Decimal) -> str:
+    return f"{round_cents(value):015.2f}"
+
+
+def sheet_lines(rows: list[UgcRow], title: str, university_name: str, signatory: str, letter_date: str) -> list[str]:
+    """The UGC sheet as tab-separated lines, cell for cell like Excel's "Text (Tab delimited)" save."""
+    lines = ["\t" + title, "\t" + university_name, "\t".join(SHEET_HEADERS)]
+    totals = [Decimal(0), Decimal(0), Decimal(0)]
+    for n, row in enumerate(rows, start=1):
+        amounts = (row.loan_approved, row.existing_balance, row.balance_payable)
+        totals = [t + a for t, a in zip(totals, amounts)]
+        lines.append("\t".join([
+            str(n), row.name.strip(), row.pf_number.strip(), row.nic.strip(),
+            f"{row.request_month:02d}", str(row.request_year),
+            f"{row.last_loan_month:02d}" if row.last_loan_month else "",
+            str(row.last_loan_year) if row.last_loan_year else "",
+            *(_sheet_amount(a) for a in amounts),
+            row.university_code.strip(),
+        ]))
+    lines.append("\t" * 8 + "\t".join(_sheet_amount(t) for t in totals))
+    lines += ["", ""]
+    lines += ["\t" + f" {signatory} ", "\t" + f" {university_name} ", "\t" + letter_date]
+    return lines
+
+
+def build_sheet_text(rows: list[UgcRow], title: str, university_name: str, signatory: str, letter_date: str,
+                     line_ending: str = "\r\n") -> tuple[str, list[str]]:
+    """Return (file_text, errors). The text is empty when any row breaks the UGC field limits."""
+    _, errors = build_file(rows, line_ending)
+    if errors:
+        return "", errors
+    lines = sheet_lines(rows, title, university_name, signatory, letter_date)
     return "".join(line + line_ending for line in lines), []

@@ -118,6 +118,7 @@ QFrame#Card[accent="true"] QLabel#Badge {{ background: rgba(16,20,10,0.12); bord
 QLabel#Muted {{ color: {MUTED}; background: transparent; }}
 QLabel#SectionTitle {{ font-size: 9pt; font-weight: 700; color: {LIME}; padding-top: 6px; letter-spacing: 1px; background: transparent; }}
 QLabel#TotalValue {{ font-family: {MONO}; font-size: 13pt; font-weight: 600; }}
+QLabel#ResultNumber {{ font-family: {MONO}; font-size: 15pt; font-weight: 600; }}
 QLabel#BigNumber {{ font-family: {MONO}; font-size: 18pt; font-weight: 600; }}
 QLabel#Hero {{ font-family: {DISPLAY}; font-size: 20pt; font-weight: 700; }}
 QLabel#Negative, QLabel[negative="true"] {{ color: {DANGER}; }}

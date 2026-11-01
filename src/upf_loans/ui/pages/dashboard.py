@@ -8,7 +8,6 @@ from sqlalchemy import func, select
 from ...core.money import format_money
 from ...db.models import Employee, RenewalBatch
 from ...services import audit, renewals
-from ..widgets.chart import PillChart
 from ..widgets.common import Card, StatCard, button, chip, muted, set_chip
 from ..widgets.table import Column, DataTable
 from .base import Page
@@ -40,19 +39,6 @@ class DashboardPage(Page):
 
         row = QHBoxLayout()
         row.setSpacing(14)
-        chart_card = Card()
-        head = QHBoxLayout()
-        t = QLabel("Loans approved by month")
-        t.setObjectName("CardTitle")
-        self.chart_total = chip("", "lime")
-        head.addWidget(t)
-        head.addStretch(1)
-        head.addWidget(self.chart_total)
-        chart_card.body.addLayout(head)
-        self.chart = PillChart()
-        chart_card.body.addWidget(self.chart, 1)
-        row.addWidget(chart_card, 3)
-
         self.latest = Card("Latest renewal month")
         head = QHBoxLayout()
         self.latest_label = QLabel("No months yet")
@@ -70,14 +56,14 @@ class DashboardPage(Page):
         go.clicked.connect(lambda: ctx.events.navigate.emit("renewals", None))
         self.latest.body.addWidget(go)
         row.addWidget(self.latest, 2)
-        self.root.addLayout(row, 3)
 
         activity = Card("Recent activity")
         self.activity = DataTable([
             Column("When", "when", width=150), Column("By", "user", width=110), Column("What", "what", stretch=True),
         ])
         activity.body.addWidget(self.activity)
-        self.root.addWidget(activity, 2)
+        row.addWidget(activity, 3)
+        self.root.addLayout(row, 1)
 
     def refresh(self) -> None:
         with self.ctx.db.session() as s:
@@ -85,8 +71,6 @@ class DashboardPage(Page):
             months = s.scalar(select(func.count(RenewalBatch.id))) or 0
             batches = renewals.list_batches(s)
             latest = batches[0] if batches else None
-            series = [(f"{renewals.month_name(b.request_month)[:3].title()} {str(b.request_year)[2:]}",
-                       renewals.totals(b)["loan_approved"]) for b in reversed(batches[:8])]
             if latest:
                 t = renewals.totals(latest)
                 count = len(latest.entries)
@@ -98,9 +82,6 @@ class DashboardPage(Page):
             ]
         self.cards["employees"].set_value(f"{active:,}")
         self.cards["months"].set_value(f"{months:,}")
-        self.chart.set_items(series)
-        self.chart_total.setText(f"{len(series)} month(s)")
-        self.chart_total.setVisible(bool(series))
         if latest:
             self.cards["approved"].set_value(format_money(t["loan_approved"]))
             self.cards["payable"].set_value(format_money(t["balance_payable"]))

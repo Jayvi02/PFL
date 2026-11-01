@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal as D
 
 import pytest
@@ -99,9 +100,22 @@ def test_exports(db, admin, tmp_path):
         renewals.save_entry(s, admin, b.id, e1.id, ROW7, 10, 2023)
         renewals.save_entry(s, admin, b.id, e2.id, ROW7, 7, 2023)
         txt = exports.export_ugc_text(s, admin, b.id, tmp_path / "out.txt")
-        lines = txt.read_bytes().split(b"\r\n")
-        assert len(lines) == 3 and lines[2] == b"" and all(len(l) == 127 for l in lines[:2])
-        assert lines[0].endswith(b"000000812930.00 F")
+        lines = txt.read_bytes().decode("cp1252").split("\r\n")
+        # Same as Excel's "Text (Tab delimited)" save of the PF LOAN send UGC sheet
+        assert lines[0] == "\tRENEWAL OF U.P.F. LOAN - APPLICATION FOR THE MONTH OF  NOVEMBER"
+        assert lines[1] == "\tUNIVERSITY OF RUHUNA"
+        assert lines[2].split("\t") == ["", "NAME", "PF-NUMBER", "ID-NUMBER", "LOAN REQUEST MONTH",
+                                        "LOAN REQUEST YEAR", "LAST LOAN MONTH", "LAST LOAN YEAR", "LOAN APPROVED",
+                                        "EXISTING LOAN BALANCE", "BALANCE  PAYABLE", "UNIVERSITY CODE"]
+        assert lines[3].split("\t")[0] == "1"
+        assert lines[3].split("\t")[2:] == ["R 001365", "680410054V", "11", "2024", "10", "2023",
+                                            "000002423400.00", "000001610470.00", "000000812930.00", "F"]
+        assert lines[4].split("\t")[2] == "F000288" and lines[4].split("\t")[6] == "07"
+        assert lines[5] == "\t" * 8 + "000004846800.00\t000003220940.00\t000001625860.00"
+        assert lines[6] == lines[7] == ""
+        assert lines[8:10] == ["\t BURSAR ", "\t UNIVERSITY OF RUHUNA "]
+        assert re.fullmatch(r"\t\d\d\.\d\d\.\d{4}", lines[10])  # letter date
+        assert lines[11] == "" and len(lines) == 12
         xlsx = exports.export_ugc_excel(s, admin, b.id, tmp_path / "ugc.xlsx")
         ws = load_workbook(xlsx).active
         assert ws["B1"].value.endswith("NOVEMBER")
