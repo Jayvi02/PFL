@@ -188,3 +188,36 @@ def test_backup_and_restore(db, admin, tmp_path):
     bad.write_text("nope")
     with pytest.raises(ServiceError):
         backup.validate_backup(bad)
+
+
+def test_move_data_folder(tmp_path, monkeypatch, admin):
+    from upf_loans import config
+    from upf_loans.db.session import Database
+    from upf_loans.services import location
+
+    monkeypatch.setenv("UPF_LOANS_HOME", str(tmp_path / "home"))
+    db = Database(config.database_path())
+    with db.session() as s:
+        add_employee(s, admin)
+    backup.create_backup(config.database_path(), config.backup_dir())
+    db.dispose()
+
+    target = tmp_path / "D" / "UPFLoans"
+    location.move_data(target)
+    assert config.data_dir() == target.resolve()
+    assert config.database_path() == target.resolve() / "upf_loans.sqlite3"
+    assert len(backup.list_backups(config.backup_dir())) == 1
+    db2 = Database(config.database_path())
+    with db2.session() as s:
+        assert len(employees.search(s)) == 1
+    db2.dispose()
+    with pytest.raises(ServiceError, match="already"):
+        location.move_data(target)
+
+    # a missing drive gives a clear error instead of silently starting empty
+    config.set_data_dir(tmp_path / "file.txt" / "x")
+    (tmp_path / "file.txt").write_text("not a folder")
+    with pytest.raises(config.DataLocationError):
+        config.data_dir()
+    config.set_data_dir(None)
+    assert config.data_dir() == config.home_dir()

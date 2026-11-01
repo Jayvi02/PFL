@@ -24,7 +24,7 @@ Each GitHub build is numbered `1.0.<build number>`. The number is shown at the b
 
 To build it yourself instead, run `packaging\build_windows.bat`. It runs the tests, builds `dist\UPFLoanManager\UPFLoanManager.exe`, then runs the exe's `--self-test` check. Copy the whole `dist\UPFLoanManager` folder to the office PC. Nothing needs to be installed there.
 
-Your data is kept in `%LOCALAPPDATA%\UPFLoans`, not in the program folder:
+Your data is kept on the computer that runs the app, in `%LOCALAPPDATA%\UPFLoans` by default, never in the program folder. **Settings → Backup & restore → Move data folder…** copies it to another folder (for example `D:\UPFLoans` or a drive that IT backs up) and uses that from then on; the choice is remembered in `%LOCALAPPDATA%\UPFLoans\data-location.txt`. The data folder holds:
 
 - the database: `upf_loans.sqlite3`
 - daily automatic backups (the last 30 are kept): `backups\`
