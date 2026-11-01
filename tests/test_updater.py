@@ -65,9 +65,12 @@ def test_download_unpack_and_script(monkeypatch, tmp_path):
     assert seen[-1] == (len(data), len(data))
     new_dir = updater.unpack(zip_path)
     assert (new_dir / "UPFLoanManager.exe").exists()
-    script = updater.write_install_script(new_dir, tmp_path / "app", 4242)
+    script = updater.write_install_script(new_dir, tmp_path / "app", 4242, "newsha")
     text = script.read_text()
     assert "PID eq 4242" in text and "robocopy" in text and "/E " in text and "/MIR" not in text
+    assert "timeout" not in text and "ping -n 2" in text  # timeout needs a console window
+    assert "PYINSTALLER_RESET_ENVIRONMENT=1" in text and "install_update.log" in text
+    assert (new_dir.parent / "target.txt").read_text() == "newsha"
     assert str(tmp_path / "app" / "UPFLoanManager.exe") in text
 
 
@@ -83,3 +86,20 @@ def test_latest_version_read_from_release_title(monkeypatch):
     data["name"] = "UPF Loan Manager 1.0.57"
     monkeypatch.setattr(updater.urllib.request, "urlopen", lambda req, timeout: FakeResponse(json.dumps(data).encode()))
     assert updater.check().latest_version == "1.0.57"
+
+
+def test_previous_install_reported_and_cleaned(monkeypatch, tmp_path):
+    monkeypatch.setenv("UPF_LOANS_HOME", str(tmp_path))
+    work = tmp_path / "update"
+    work.mkdir()
+    (work / "target.txt").write_text("newsha")
+    (work / "install_update.log").write_text("installer started\nrobocopy exit code 16")
+    monkeypatch.setattr(updater._build, "BUILD_SHA", "oldsha")
+    msg = updater.check_previous_install()
+    assert "did not install" in msg and "exit code 16" in msg
+    assert not work.exists()
+    assert updater.check_previous_install() is None
+
+    work.mkdir()
+    (work / "target.txt").write_text("oldsha")  # update worked: running the target build
+    assert updater.check_previous_install() is None and not work.exists()

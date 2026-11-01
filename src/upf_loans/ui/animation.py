@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from decimal import Decimal, InvalidOperation
 
-from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QRect, QVariantAnimation
+from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QRect, QTimer, QVariantAnimation
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 EASE = QEasingCurve.Type.OutCubic
@@ -25,8 +25,17 @@ def fade_in(widget: QWidget, duration: int = 260) -> None:
     anim.setStartValue(0.0)
     anim.setEndValue(1.0)
     anim.setEasingCurve(EASE)
-    anim.finished.connect(lambda: widget.setGraphicsEffect(None))
-    anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+    widget._fade_anim = anim  # keep a reference until it ends
+
+    def done() -> None:
+        # Remove the effect after the animation has fully unwound, never from inside its own signal.
+        def clear() -> None:
+            if widget.graphicsEffect() is effect:
+                widget.setGraphicsEffect(None)
+        QTimer.singleShot(0, widget, clear)
+
+    anim.finished.connect(done)
+    anim.start()
 
 
 def slide_to(widget: QWidget, target: QRect, duration: int = 280) -> None:
