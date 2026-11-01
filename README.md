@@ -57,7 +57,7 @@ These are the formulas from the workbook's MAIN sheet, applied column by column.
 
 The text file is the "PF LOAN send UGC" sheet saved the way Excel's **Text (Tab delimited)** option saves it, which is what UGC has been receiving. Fields are separated by tabs:
 
-1. the title (`RENEWAL OF U.P.F. LOAN - APPLICATION FOR THE MONTH OF  …`) and the university name
+1. the title (`RENEWAL OF U.P.F. LOAN - APPLICATION FOR THE MONTH OF  …`, with the month the file is exported) and the university name
 2. the column headings
 3. one row per employee: serial number, name, PF number, NIC, request month and year, last loan month and year, the three amounts as `000000000000.00`, and the university code
 4. the totals row, two blank lines, then the signatory, the university name and the letter date

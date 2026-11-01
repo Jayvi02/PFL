@@ -28,7 +28,7 @@ def title_text(month: int) -> str:
 
 
 def write_ugc_workbook(
-    path: Path, rows: list[UgcRow], request_month: int, university_name: str, signatory: str, letter_date: str
+    path: Path, rows: list[UgcRow], title_month: int, university_name: str, signatory: str, letter_date: str
 ) -> Path:
     wb = Workbook()
     ws = wb.active
@@ -44,7 +44,7 @@ def write_ugc_workbook(
 
     ws.merge_cells("B1:J1")
     ws.merge_cells("B2:J2")
-    ws["B1"] = title_text(request_month)
+    ws["B1"] = title_text(title_month)  # the month the sheet is exported
     ws["B2"] = university_name
     for ref in ("B1", "B2"):
         ws[ref].font = title_font

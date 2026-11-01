@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -26,7 +27,7 @@ def export_ugc_text(session: Session, actor: str, batch_id: int, path: Path) -> 
         raise ServiceError("This month has no employees.")
     ending = "\r\n" if settings.get(session, "text_line_ending") == "CRLF" else "\n"
     s = settings.get_all(session)
-    text, errors = build_sheet_text(renewals.ugc_rows(session, batch), title_text(batch.request_month),
+    text, errors = build_sheet_text(renewals.ugc_rows(session, batch), title_text(date.today().month),
                                     s["university_name"], s["signatory_title"], batch.letter_date, ending)
     if errors:
         raise ServiceError("The UGC text file was not created:\n" + "\n".join(errors))
@@ -39,7 +40,7 @@ def export_ugc_text(session: Session, actor: str, batch_id: int, path: Path) -> 
 def export_ugc_excel(session: Session, actor: str, batch_id: int, path: Path) -> Path:
     batch = renewals.get_batch(session, batch_id)
     s = settings.get_all(session)
-    write_ugc_workbook(path, renewals.ugc_rows(session, batch), batch.request_month, s["university_name"],
+    write_ugc_workbook(path, renewals.ugc_rows(session, batch), date.today().month, s["university_name"],
                        s["signatory_title"], batch.letter_date)
     audit.record(session, actor, "export.ugc_excel", "batch", batch.id,
                  f"{renewals.batch_label(batch)} -> {Path(path).name}")
